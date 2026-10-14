@@ -22,7 +22,7 @@ def test_add_stage_type_rejects_duplicates(client):
 
 
 def test_create_project_with_picked_stages(client):
-    project = create_project(client, po_number="PO-123", client_name="Acme")
+    project = create_project(client, po_number="PO-123")
     assert [s["name"] for s in project["stages"]] == ["PO received", "Ordering parts", "Electrical design"]
     assert [s["position"] for s in project["stages"]] == [0, 1, 2]
     assert all(s["status"] == "not_started" for s in project["stages"])

@@ -1,4 +1,8 @@
 import type {
+  Client,
+  ClientFields,
+  Contact,
+  ContactFields,
   DashboardProject,
   Project,
   ProjectCreate,
@@ -49,4 +53,18 @@ export const api = {
     request<ProjectStage>('POST', `/projects/${projectId}/stages`, body),
   updateStage: (id: number, body: ProjectStageUpdate) => request<ProjectStage>('PATCH', `/stages/${id}`, body),
   deleteStage: (id: number) => request<void>('DELETE', `/stages/${id}`),
+  addStakeholder: (stageId: number, contactId: number) =>
+    request<ProjectStage>('POST', `/stages/${stageId}/contacts/${contactId}`),
+  removeStakeholder: (stageId: number, contactId: number) =>
+    request<ProjectStage>('DELETE', `/stages/${stageId}/contacts/${contactId}`),
+
+  clients: () => request<Client[]>('GET', '/clients'),
+  createClient: (body: ClientFields) => request<Client>('POST', '/clients', body),
+  updateClient: (id: number, body: Partial<ClientFields>) => request<Client>('PATCH', `/clients/${id}`, body),
+  deleteClient: (id: number) => request<void>('DELETE', `/clients/${id}`),
+
+  contacts: (q = '') => request<Contact[]>('GET', `/contacts${q ? `?q=${encodeURIComponent(q)}` : ''}`),
+  createContact: (body: ContactFields) => request<Contact>('POST', '/contacts', body),
+  updateContact: (id: number, body: Partial<ContactFields>) => request<Contact>('PATCH', `/contacts/${id}`, body),
+  deleteContact: (id: number) => request<void>('DELETE', `/contacts/${id}`),
 }

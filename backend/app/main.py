@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
-from app.routers import dashboard, projects, stage_types, stages
+from app.routers import clients, contacts, dashboard, projects, stage_types, stages
 
 app = FastAPI(title="Project Tracker")
 
@@ -18,6 +18,8 @@ app.include_router(dashboard.router)
 app.include_router(projects.router)
 app.include_router(stages.router)
 app.include_router(stage_types.router)
+app.include_router(clients.router)
+app.include_router(contacts.router)
 
 
 @app.get("/health")

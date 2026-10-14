@@ -1,5 +1,6 @@
 import type { ProjectLabel } from '../api/types'
 import type { FieldValues } from '../projectFields'
+import { ClientSelect } from './ClientSelect'
 
 interface Props {
   values: FieldValues
@@ -17,10 +18,10 @@ export function ProjectFieldsForm({ values, onChange }: Props) {
           Name
           <input required value={values.name} onChange={(e) => set('name', e.target.value)} />
         </label>
-        <label>
-          Client
-          <input value={values.client_name} onChange={(e) => set('client_name', e.target.value)} />
-        </label>
+        <div className="field">
+          <span>Client</span>
+          <ClientSelect value={values.client_id} onChange={(v) => set('client_id', v)} />
+        </div>
         <label>
           PO number
           <input value={values.po_number} onChange={(e) => set('po_number', e.target.value)} />

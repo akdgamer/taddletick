@@ -12,6 +12,61 @@ class ORMModel(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+# Clients and contacts
+
+class ClientRef(ORMModel):
+    id: int
+    name: str
+
+
+class ClientBase(BaseModel):
+    name: str = Field(min_length=1, max_length=200)
+    address: str = ""
+    notes: str = ""
+
+
+class ClientCreate(ClientBase):
+    pass
+
+
+class ClientUpdate(BaseModel):
+    name: str | None = Field(default=None, min_length=1, max_length=200)
+    address: str | None = None
+    notes: str | None = None
+
+
+class ContactBase(BaseModel):
+    name: str = Field(min_length=1, max_length=200)
+    client_id: int | None = None
+    role: str = ""
+    phone: str = ""
+    email: str = ""
+    notes: str = ""
+
+
+class ContactCreate(ContactBase):
+    pass
+
+
+class ContactUpdate(BaseModel):
+    name: str | None = Field(default=None, min_length=1, max_length=200)
+    client_id: int | None = None
+    role: str | None = None
+    phone: str | None = None
+    email: str | None = None
+    notes: str | None = None
+
+
+class ContactRead(ContactBase, ORMModel):
+    id: int
+    client: ClientRef | None
+
+
+class ClientRead(ClientBase, ORMModel):
+    id: int
+    contacts: list[ContactRead]
+
+
 # Stage types (catalog)
 
 class StageTypeCreate(BaseModel):
@@ -48,13 +103,14 @@ class ProjectStageRead(ORMModel):
     due_date: date | None
     notes: str
     position: int
+    contacts: list[ContactRead]
 
 
 # Projects
 
 class ProjectBase(BaseModel):
     name: str = Field(min_length=1, max_length=200)
-    client_name: str | None = None
+    client_id: int | None = None
     po_number: str | None = None
     label: ProjectLabel = ProjectLabel.company
     is_p0: bool = False
@@ -69,7 +125,7 @@ class ProjectCreate(ProjectBase):
 
 class ProjectUpdate(BaseModel):
     name: str | None = Field(default=None, min_length=1, max_length=200)
-    client_name: str | None = None
+    client_id: int | None = None
     po_number: str | None = None
     label: ProjectLabel | None = None
     is_p0: bool | None = None
@@ -80,6 +136,7 @@ class ProjectUpdate(BaseModel):
 
 class ProjectRead(ProjectBase, ORMModel):
     id: int
+    client: ClientRef | None
     is_completed: bool
     stages: list[ProjectStageRead]
 
@@ -92,6 +149,7 @@ class DashboardStage(ProjectStageRead):
 
 class DashboardProject(ProjectBase):
     id: int
+    client: ClientRef | None
     flag: Flag
     dispatch_flag: Flag
     days_to_dispatch: int | None

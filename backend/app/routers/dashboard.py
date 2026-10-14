@@ -30,7 +30,8 @@ def dashboard(session: Session = Depends(get_session), today: date = Depends(get
         DashboardProject(
             id=p.id,
             name=p.name,
-            client_name=p.client_name,
+            client_id=p.client_id,
+            client=p.client,
             po_number=p.po_number,
             label=p.label,
             is_p0=p.is_p0,

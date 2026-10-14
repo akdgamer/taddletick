@@ -35,9 +35,9 @@ export function ProjectTile({ project }: { project: DashboardProject }) {
             </div>
           </header>
 
-          {(project.client_name || project.po_number) && (
+          {(project.client || project.po_number) && (
             <p className="tile-meta">
-              {[project.client_name, project.po_number && `PO ${project.po_number}`].filter(Boolean).join(' · ')}
+              {[project.client?.name, project.po_number && `PO ${project.po_number}`].filter(Boolean).join(' · ')}
             </p>
           )}
 

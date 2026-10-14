@@ -8,7 +8,8 @@ import { ProjectTile } from './ProjectTile'
 const project: DashboardProject = {
   id: 7,
   name: 'Welding fixture',
-  client_name: 'Acme',
+  client_id: 3,
+  client: { id: 3, name: 'Acme' },
   po_number: '4501',
   label: 'company',
   is_p0: true,
@@ -18,8 +19,8 @@ const project: DashboardProject = {
   dispatch_flag: 'amber',
   days_to_dispatch: 3,
   stages: [
-    { id: 1, stage_type_id: 2, name: 'Ordering parts', status: 'in_progress', due_date: '2026-02-20', notes: '', position: 1, flag: 'red' },
-    { id: 2, stage_type_id: 1, name: 'PO received', status: 'done', due_date: null, notes: '', position: 0, flag: 'none' },
+    { id: 1, stage_type_id: 2, name: 'Ordering parts', status: 'in_progress', due_date: '2026-02-20', notes: '', position: 1, flag: 'red', contacts: [] },
+    { id: 2, stage_type_id: 1, name: 'PO received', status: 'done', due_date: null, notes: '', position: 0, flag: 'none', contacts: [] },
   ],
 }
 

@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session, selectinload
 
 from app.db import get_session
 from app.models import Project, ProjectStage, StageType
+from app.routers.clients import check_client_exists
 from app.schemas import (
     ProjectCreate,
     ProjectRead,
@@ -50,6 +51,7 @@ def create_project(body: ProjectCreate, session: Session = Depends(get_session))
     if len(set(body.stage_type_ids)) != len(body.stage_type_ids):
         raise HTTPException(422, "A stage can only be added to a project once")
     check_stage_types_exist(session, body.stage_type_ids)
+    check_client_exists(session, body.client_id)
 
     project = Project(**body.model_dump(exclude={"stage_type_ids"}))
     project.stages = [
@@ -66,7 +68,10 @@ def create_project(body: ProjectCreate, session: Session = Depends(get_session))
 def update_project(project_id: int, body: ProjectUpdate, session: Session = Depends(get_session)):
     project = get_project_or_404(session, project_id)
     # exclude_unset: only fields the client actually sent are changed
-    for field, value in body.model_dump(exclude_unset=True).items():
+    changes = body.model_dump(exclude_unset=True)
+    if "client_id" in changes:
+        check_client_exists(session, changes["client_id"])
+    for field, value in changes.items():
         setattr(project, field, value)
     session.commit()
     session.refresh(project)

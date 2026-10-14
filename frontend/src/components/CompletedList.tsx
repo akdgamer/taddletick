@@ -27,7 +27,7 @@ function CompletedRow({ project }: { project: Project }) {
   const error = updateProject.error ?? deleteProject.error
 
   const details = [
-    project.client_name,
+    project.client?.name,
     project.po_number && `PO ${project.po_number}`,
     project.dispatch_date && `Dispatch ${formatDate(project.dispatch_date)}`,
     project.label === 'personal' && 'Personal',

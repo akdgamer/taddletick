@@ -10,7 +10,8 @@ import { ProjectTile } from './ProjectTile'
 const project: DashboardProject = {
   id: 7,
   name: 'Welding fixture',
-  client_name: 'Acme',
+  client_id: 3,
+  client: { id: 3, name: 'Acme' },
   po_number: '4501',
   label: 'company',
   is_p0: false,

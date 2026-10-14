@@ -23,7 +23,7 @@ describe('NewProjectForm', () => {
     expect(String(url)).toMatch(/\/projects$/)
     expect(JSON.parse(String(init!.body))).toEqual({
       name: 'Press line',
-      client_name: null,
+      client_id: null,
       po_number: 'PO-9',
       label: 'company',
       is_p0: false,

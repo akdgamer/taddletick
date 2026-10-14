@@ -1,18 +1,32 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 import { api } from './client'
-import type { ProjectCreate, ProjectStageCreate, ProjectStageUpdate, ProjectUpdate } from './types'
+import type {
+  ClientFields,
+  ContactFields,
+  ProjectCreate,
+  ProjectStageCreate,
+  ProjectStageUpdate,
+  ProjectUpdate,
+} from './types'
 
 const keys = {
   dashboard: ['dashboard'] as const,
   projects: ['projects'] as const,
   stageTypes: ['stage-types'] as const,
+  clients: ['clients'] as const,
+  contacts: ['contacts'] as const,
 }
 
 export const useDashboard = () => useQuery({ queryKey: keys.dashboard, queryFn: api.dashboard })
 
 export const useCompletedProjects = () =>
   useQuery({ queryKey: [...keys.projects, { completed: true }], queryFn: () => api.projects(true) })
+
+export const useClients = () => useQuery({ queryKey: keys.clients, queryFn: api.clients })
+
+export const useContacts = (q = '') =>
+  useQuery({ queryKey: [...keys.contacts, q], queryFn: () => api.contacts(q) })
 
 export const useStageTypes = () => useQuery({ queryKey: keys.stageTypes, queryFn: api.stageTypes })
 
@@ -48,6 +62,47 @@ export const useUpdateStage = () =>
   useProjectMutation(({ id, body }: { id: number; body: ProjectStageUpdate }) => api.updateStage(id, body))
 
 export const useDeleteStage = () => useProjectMutation((id: number) => api.deleteStage(id))
+
+export const useAddStakeholder = () =>
+  useProjectMutation(({ stageId, contactId }: { stageId: number; contactId: number }) =>
+    api.addStakeholder(stageId, contactId),
+  )
+
+export const useRemoveStakeholder = () =>
+  useProjectMutation(({ stageId, contactId }: { stageId: number; contactId: number }) =>
+    api.removeStakeholder(stageId, contactId),
+  )
+
+/**
+ * Client and contact names show up on project tiles and stages too,
+ * so a change to either refreshes every view that might display them.
+ */
+function usePeopleMutation<TArgs, TResult>(fn: (args: TArgs) => Promise<TResult>) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: fn,
+    onSuccess: () =>
+      Promise.all(
+        [keys.clients, keys.contacts, keys.dashboard, keys.projects].map((queryKey) =>
+          queryClient.invalidateQueries({ queryKey }),
+        ),
+      ),
+  })
+}
+
+export const useCreateClient = () => usePeopleMutation((body: ClientFields) => api.createClient(body))
+
+export const useUpdateClient = () =>
+  usePeopleMutation(({ id, body }: { id: number; body: Partial<ClientFields> }) => api.updateClient(id, body))
+
+export const useDeleteClient = () => usePeopleMutation((id: number) => api.deleteClient(id))
+
+export const useCreateContact = () => usePeopleMutation((body: ContactFields) => api.createContact(body))
+
+export const useUpdateContact = () =>
+  usePeopleMutation(({ id, body }: { id: number; body: Partial<ContactFields> }) => api.updateContact(id, body))
+
+export const useDeleteContact = () => usePeopleMutation((id: number) => api.deleteContact(id))
 
 export function useCreateStageType() {
   const queryClient = useQueryClient()

@@ -19,11 +19,16 @@ from app.routers.dashboard import get_today
 TODAY = date(2026, 3, 1)
 
 
+def alembic_config() -> Config:
+    cfg = Config("alembic.ini")
+    cfg.set_main_option("sqlalchemy.url", os.environ["DATABASE_URL"])
+    return cfg
+
+
 @pytest.fixture(scope="session", autouse=True)
 def migrated_db():
     """Build the test schema with the real migrations, so they get tested too."""
-    cfg = Config("alembic.ini")
-    cfg.set_main_option("sqlalchemy.url", os.environ["DATABASE_URL"])
+    cfg = alembic_config()
     command.downgrade(cfg, "base")
     command.upgrade(cfg, "head")
 
@@ -32,7 +37,9 @@ def migrated_db():
 def clean_tables():
     yield
     with engine.begin() as conn:
-        conn.execute(text("TRUNCATE projects, project_stages RESTART IDENTITY CASCADE"))
+        conn.execute(text(
+            "TRUNCATE projects, project_stages, project_stage_contacts, contacts, clients RESTART IDENTITY CASCADE"
+        ))
         # Keep the seeded catalog, drop anything a test added
         conn.execute(text("DELETE FROM stage_types WHERE sort_order > 11"))
 

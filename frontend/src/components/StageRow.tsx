@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useDeleteStage, useUpdateStage } from '../api/hooks'
 import type { DashboardStage, StageStatus } from '../api/types'
 import { STATUS_LABELS } from '../format'
+import { Stakeholders } from './Stakeholders'
 
 export function StageRow({ stage }: { stage: DashboardStage }) {
   const updateStage = useUpdateStage()
@@ -54,6 +55,11 @@ export function StageRow({ stage }: { stage: DashboardStage }) {
       >
         ×
       </button>
+
+      {/* Finished stages with nobody attached don't need a people row */}
+      {(stage.status !== 'done' || stage.contacts.length > 0) && (
+        <Stakeholders stageId={stage.id} stageName={stage.name} contacts={stage.contacts} />
+      )}
     </li>
   )
 }

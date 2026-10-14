@@ -3,15 +3,19 @@ from datetime import date, datetime
 
 from sqlalchemy import (
     Boolean,
+    Column,
     Date,
     DateTime,
     Enum,
     ForeignKey,
+    Index,
     Integer,
     String,
+    Table,
     Text,
     UniqueConstraint,
     func,
+    text,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -30,6 +34,48 @@ class StageStatus(str, enum.Enum):
     done = "done"
 
 
+# Stakeholders: which contacts are involved in which project stage (many-to-many)
+project_stage_contacts = Table(
+    "project_stage_contacts",
+    Base.metadata,
+    Column("project_stage_id", ForeignKey("project_stages.id", ondelete="CASCADE"), primary_key=True),
+    Column("contact_id", ForeignKey("contacts.id", ondelete="CASCADE"), primary_key=True, index=True),
+)
+
+
+class Client(Base):
+    """A customer company. Has many contacts and many projects."""
+
+    __tablename__ = "clients"
+    # Names are unique ignoring case, so "Acme" and "acme" can't both exist
+    __table_args__ = (Index("uq_clients_name_lower", text("lower(name)"), unique=True),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String(200))
+    address: Mapped[str] = mapped_column(Text, default="")
+    notes: Mapped[str] = mapped_column(Text, default="")
+
+    contacts: Mapped[list["Contact"]] = relationship(back_populates="client", order_by="Contact.name")
+
+
+class Contact(Base):
+    """A person. Belongs to a client company, or to none (e.g. a supplier)."""
+
+    __tablename__ = "contacts"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String(200))
+    client_id: Mapped[int | None] = mapped_column(
+        ForeignKey("clients.id", ondelete="RESTRICT"), index=True
+    )
+    role: Mapped[str] = mapped_column(String(200), default="")
+    phone: Mapped[str] = mapped_column(String(50), default="")
+    email: Mapped[str] = mapped_column(String(200), default="")
+    notes: Mapped[str] = mapped_column(Text, default="")
+
+    client: Mapped[Client | None] = relationship(back_populates="contacts", lazy="joined")
+
+
 class StageType(Base):
     """Catalog entry: a reusable kind of stage, e.g. "Electrical design"."""
 
@@ -46,8 +92,9 @@ class Project(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(200))
-    # Plain text until clients become their own entity
-    client_name: Mapped[str | None] = mapped_column(String(200))
+    client_id: Mapped[int | None] = mapped_column(
+        ForeignKey("clients.id", ondelete="RESTRICT"), index=True
+    )
     po_number: Mapped[str | None] = mapped_column(String(100))
     label: Mapped[ProjectLabel] = mapped_column(
         Enum(ProjectLabel, name="project_label"), default=ProjectLabel.company
@@ -63,6 +110,7 @@ class Project(Base):
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
 
+    client: Mapped[Client | None] = relationship(lazy="joined")
     stages: Mapped[list["ProjectStage"]] = relationship(
         back_populates="project",
         cascade="all, delete-orphan",
@@ -92,6 +140,9 @@ class ProjectStage(Base):
 
     project: Mapped[Project] = relationship(back_populates="stages")
     stage_type: Mapped[StageType] = relationship(lazy="joined")
+    contacts: Mapped[list[Contact]] = relationship(
+        secondary=project_stage_contacts, lazy="selectin", order_by=Contact.name
+    )
 
     @property
     def name(self) -> str:
