@@ -38,7 +38,8 @@ def clean_tables():
     yield
     with engine.begin() as conn:
         conn.execute(text(
-            "TRUNCATE projects, project_stages, project_stage_contacts, contacts, clients RESTART IDENTITY CASCADE"
+            "TRUNCATE projects, project_stages, project_stage_contacts, contacts, clients, payments, "
+            "project_files, tasks, task_completions, synced_items, google_account RESTART IDENTITY CASCADE"
         ))
         # Keep the seeded catalog, drop anything a test added
         conn.execute(text("DELETE FROM stage_types WHERE sort_order > 11"))

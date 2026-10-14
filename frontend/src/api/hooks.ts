@@ -3,6 +3,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from './client'
 import type {
   ClientFields,
+  PaymentFields,
+  TaskFields,
   ContactFields,
   ProjectCreate,
   ProjectStageCreate,
@@ -16,6 +18,9 @@ const keys = {
   stageTypes: ['stage-types'] as const,
   clients: ['clients'] as const,
   contacts: ['contacts'] as const,
+  payments: ['payments'] as const,
+  tasks: ['tasks'] as const,
+  google: ['google'] as const,
 }
 
 export const useDashboard = () => useQuery({ queryKey: keys.dashboard, queryFn: api.dashboard })
@@ -39,10 +44,9 @@ function useProjectMutation<TArgs, TResult>(fn: (args: TArgs) => Promise<TResult
   return useMutation({
     mutationFn: fn,
     onSuccess: () =>
-      Promise.all([
-        queryClient.invalidateQueries({ queryKey: keys.dashboard }),
-        queryClient.invalidateQueries({ queryKey: keys.projects }),
-      ]),
+      Promise.all(
+        [keys.dashboard, keys.projects, keys.payments].map((queryKey) => queryClient.invalidateQueries({ queryKey })),
+      ),
   })
 }
 
@@ -111,3 +115,49 @@ export function useCreateStageType() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: keys.stageTypes }),
   })
 }
+
+export const useOutstandingPayments = () =>
+  useQuery({ queryKey: keys.payments, queryFn: api.outstandingPayments })
+
+export const useAddPayment = () =>
+  useProjectMutation(({ projectId, body }: { projectId: number; body: PaymentFields }) =>
+    api.addPayment(projectId, body),
+  )
+
+export const useUpdatePayment = () =>
+  useProjectMutation(({ id, body }: { id: number; body: Partial<PaymentFields> }) => api.updatePayment(id, body))
+
+export const useDeletePayment = () => useProjectMutation((id: number) => api.deletePayment(id))
+
+export const useUploadFile = () =>
+  useProjectMutation(({ projectId, file }: { projectId: number; file: File }) => api.uploadFile(projectId, file))
+
+export const useDeleteFile = () => useProjectMutation((id: number) => api.deleteFile(id))
+
+export const useTasks = () => useQuery({ queryKey: [...keys.tasks, 'all'], queryFn: api.tasks })
+export const useTodayTasks = () => useQuery({ queryKey: [...keys.tasks, 'today'], queryFn: api.todayTasks })
+
+function useTaskMutation<TArgs, TResult>(fn: (args: TArgs) => Promise<TResult>) {
+  const queryClient = useQueryClient()
+  return useMutation({ mutationFn: fn, onSuccess: () => queryClient.invalidateQueries({ queryKey: keys.tasks }) })
+}
+
+export const useCreateTask = () =>
+  useTaskMutation((body: Partial<TaskFields> & { title: string }) => api.createTask(body))
+export const useUpdateTask = () =>
+  useTaskMutation(({ id, body }: { id: number; body: Partial<TaskFields & { is_archived: boolean }> }) =>
+    api.updateTask(id, body),
+  )
+export const useDeleteTask = () => useTaskMutation((id: number) => api.deleteTask(id))
+export const useSetTaskDone = () =>
+  useTaskMutation(({ id, done }: { id: number; done: boolean }) => api.setTaskDone(id, done))
+
+export const useGoogleStatus = () => useQuery({ queryKey: keys.google, queryFn: api.googleStatus })
+
+function useGoogleMutation<TResult>(fn: () => Promise<TResult>) {
+  const queryClient = useQueryClient()
+  return useMutation({ mutationFn: fn, onSettled: () => queryClient.invalidateQueries({ queryKey: keys.google }) })
+}
+
+export const useGoogleSync = () => useGoogleMutation(api.googleSync)
+export const useGoogleDisconnect = () => useGoogleMutation(api.googleDisconnect)

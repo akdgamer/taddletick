@@ -1,0 +1,9 @@
+{
+  "name": "Taddletick",
+  "short_name": "Taddletick",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f6f6f4",
+  "theme_color": "#2c5cc5",
+  "icons": [{ "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" }]
+}

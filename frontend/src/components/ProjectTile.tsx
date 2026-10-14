@@ -4,6 +4,8 @@ import { useAddStage, useDeleteProject, useStageTypes, useUpdateProject } from '
 import type { DashboardProject } from '../api/types'
 import { dispatchText, formatDate } from '../format'
 import { EditProjectForm } from './EditProjectForm'
+import { FilesSection } from './FilesSection'
+import { PaymentsSection } from './PaymentsSection'
 import { StageRow } from './StageRow'
 
 export function ProjectTile({ project }: { project: DashboardProject }) {
@@ -59,6 +61,9 @@ export function ProjectTile({ project }: { project: DashboardProject }) {
       ) : (
         <p className="muted">No stages yet.</p>
       )}
+
+      <PaymentsSection projectId={project.id} payments={project.payments} />
+      <FilesSection projectId={project.id} files={project.files} />
 
       {error && <p className="error">{error.message}</p>}
 

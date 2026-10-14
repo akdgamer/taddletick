@@ -21,6 +21,8 @@ const project: DashboardProject = {
   dispatch_flag: 'none',
   days_to_dispatch: 30,
   stages: [],
+  payments: [],
+  files: [],
 }
 
 function sentRequest(fetchMock: ReturnType<typeof mockFetch>, method: string) {

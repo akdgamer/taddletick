@@ -38,7 +38,7 @@ def list_projects(completed: bool = False, session: Session = Depends(get_sessio
         .where(Project.is_completed.is_(completed))
         .options(selectinload(Project.stages))
         .order_by(Project.updated_at.desc(), Project.id.desc())
-    ).all()
+    ).unique().all()
 
 
 @router.get("/{project_id}", response_model=ProjectRead)
@@ -80,8 +80,11 @@ def update_project(project_id: int, body: ProjectUpdate, session: Session = Depe
 
 @router.delete("/{project_id}", status_code=204)
 def delete_project(project_id: int, session: Session = Depends(get_session)):
+    from app.routers.files import delete_project_files  # avoid a circular import
+
     session.delete(get_project_or_404(session, project_id))
     session.commit()
+    delete_project_files(project_id)
 
 
 @router.post("/{project_id}/stages", response_model=ProjectStageRead, status_code=201)

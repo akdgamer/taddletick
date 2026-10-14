@@ -22,6 +22,8 @@ const project: DashboardProject = {
     { id: 1, stage_type_id: 2, name: 'Ordering parts', status: 'in_progress', due_date: '2026-02-20', notes: '', position: 1, flag: 'red', contacts: [] },
     { id: 2, stage_type_id: 1, name: 'PO received', status: 'done', due_date: null, notes: '', position: 0, flag: 'none', contacts: [] },
   ],
+  payments: [],
+  files: [],
 }
 
 describe('ProjectTile', () => {

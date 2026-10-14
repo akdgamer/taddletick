@@ -1,0 +1,62 @@
+# Production stack for the Raspberry Pi.
+#   docker compose -f docker-compose.prod.yml up -d --build
+# Settings come from .env (see .env.example). See DEPLOY.md.
+
+services:
+  db:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: tracker
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD in .env}
+      POSTGRES_DB: tracker
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tracker"]
+      interval: 10s
+      retries: 10
+
+  app:
+    build: .
+    image: taddletick
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment: &app-env
+      DATABASE_URL: postgresql+psycopg://tracker:${DB_PASSWORD}@db:5432/tracker
+      GOOGLE_REDIRECT_URI: ${GOOGLE_REDIRECT_URI:-http://localhost:8000/google/callback}
+      SYNC_INTERVAL_SECONDS: ${SYNC_INTERVAL_SECONDS:-300}
+    ports:
+      # Only reachable from the Pi itself; Tailscale Serve publishes it to your devices
+      - "127.0.0.1:${APP_PORT:-8000}:8000"
+    volumes: &app-volumes
+      - ${FILES_PATH:?set FILES_PATH in .env}:/data/files
+      - ./secrets:/secrets:ro
+
+  worker:
+    image: taddletick
+    restart: unless-stopped
+    depends_on:
+      - app # app runs the migrations first
+    command: ["python", "-m", "app.worker"]
+    environment: *app-env
+    volumes: *app-volumes
+
+  backup:
+    image: postgres:16
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PGPASSWORD: ${DB_PASSWORD}
+      KEEP_DAYS: ${BACKUP_KEEP_DAYS:-30}
+    volumes:
+      - ${BACKUP_PATH:?set BACKUP_PATH in .env}:/backups
+      - ./deploy/backup.sh:/backup.sh:ro
+    entrypoint: ["sh", "/backup.sh"]
+
+volumes:
+  db-data:

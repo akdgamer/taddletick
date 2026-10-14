@@ -4,10 +4,17 @@ from fastapi import APIRouter, Depends
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
+from app import urgency
 from app.db import get_session
 from app.models import Project
-from app.schemas import DashboardProject, DashboardStage, ProjectStageRead
-from app import urgency
+from app.schemas import (
+    DashboardPayment,
+    DashboardProject,
+    DashboardStage,
+    FileRead,
+    PaymentRead,
+    ProjectStageRead,
+)
 
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
 
@@ -23,7 +30,7 @@ def dashboard(session: Session = Depends(get_session), today: date = Depends(get
         select(Project)
         .where(Project.is_completed.is_(False))
         .options(selectinload(Project.stages))
-    ).all()
+    ).unique().all()
     projects = sorted(projects, key=lambda p: urgency.sort_key(p, today))
 
     return [
@@ -47,6 +54,11 @@ def dashboard(session: Session = Depends(get_session), today: date = Depends(get
                 )
                 for s in urgency.order_stages(p.stages)
             ],
+            payments=[
+                DashboardPayment(**PaymentRead.model_validate(pay).model_dump(), flag=urgency.payment_flag(pay, today))
+                for pay in p.payments
+            ],
+            files=[FileRead.model_validate(f) for f in p.files],
         )
         for p in projects
     ]

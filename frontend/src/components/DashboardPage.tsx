@@ -2,6 +2,7 @@ import { Fragment, useState } from 'react'
 
 import { useDashboard } from '../api/hooks'
 import { CompletedList } from './CompletedList'
+import { ChasePanel, TodayPanel } from './DashboardPanels'
 import { NewProjectForm } from './NewProjectForm'
 import { ProjectTile } from './ProjectTile'
 
@@ -33,6 +34,10 @@ export function DashboardPage() {
 
       {view === 'active' ? (
         <>
+          <div className="panels">
+            <TodayPanel />
+            <ChasePanel />
+          </div>
           {creating && <NewProjectForm onDone={() => setCreating(false)} />}
           <ActiveProjects hideEmptyMessage={creating} />
         </>

@@ -51,6 +51,74 @@ export interface ProjectStage {
   contacts: Contact[]
 }
 
+export interface PaymentFields {
+  label: string
+  expected_amount: number
+  due_date: string | null
+  received_amount: number
+  received_date: string | null
+  notes: string
+}
+
+export interface Payment extends PaymentFields {
+  id: number
+  project_id: number
+  is_paid: boolean
+}
+
+export interface DashboardPayment extends Payment {
+  flag: Flag
+}
+
+export interface ProjectRef {
+  id: number
+  name: string
+  is_completed: boolean
+}
+
+export interface OutstandingPayment extends DashboardPayment {
+  project: ProjectRef
+  client: ClientRef | null
+  contacts: Contact[]
+}
+
+export interface ProjectFile {
+  id: number
+  filename: string
+  content_type: string
+  size: number
+  uploaded_at: string
+}
+
+export type Recurrence = 'none' | 'daily' | 'weekdays' | 'weekly'
+
+export interface TaskFields {
+  title: string
+  notes: string
+  project_id: number | null
+  recurrence: Recurrence
+  start_date: string
+}
+
+export interface Task extends TaskFields {
+  id: number
+  project: ProjectRef | null
+  is_archived: boolean
+}
+
+export interface TodayTask extends Task {
+  done: boolean
+  days_overdue: number
+}
+
+export interface GoogleStatus {
+  configured: boolean
+  connected: boolean
+  last_sync_at: string | null
+  last_error: string | null
+  redirect_uri: string
+}
+
 export interface ProjectFields {
   name: string
   client_id: number | null
@@ -66,6 +134,8 @@ export interface Project extends ProjectFields {
   client: ClientRef | null
   is_completed: boolean
   stages: ProjectStage[]
+  payments: Payment[]
+  files: ProjectFile[]
 }
 
 export interface ProjectCreate extends ProjectFields {
@@ -94,4 +164,6 @@ export interface DashboardProject extends ProjectFields {
   dispatch_flag: Flag
   days_to_dispatch: number | null
   stages: DashboardStage[]
+  payments: DashboardPayment[]
+  files: ProjectFile[]
 }
