@@ -1,29 +1,58 @@
 import { Fragment, useState } from 'react'
 
 import { useDashboard } from '../api/hooks'
+import { CompletedList } from './CompletedList'
 import { NewProjectForm } from './NewProjectForm'
 import { ProjectTile } from './ProjectTile'
 
+type View = 'active' | 'completed'
+
 export function DashboardPage() {
-  const { data: projects, isPending, error } = useDashboard()
+  const [view, setView] = useState<View>('active')
   const [creating, setCreating] = useState(false)
 
   return (
     <main className="page">
       <header className="page-header">
         <h1>Projects</h1>
-        {!creating && (
-          <button className="primary" onClick={() => setCreating(true)}>
-            New project
-          </button>
-        )}
+        <div className="header-actions">
+          <div className="view-switch" role="group" aria-label="View">
+            {(['active', 'completed'] as const).map((v) => (
+              <button key={v} aria-pressed={view === v} onClick={() => setView(v)}>
+                {v === 'active' ? 'Active' : 'Completed'}
+              </button>
+            ))}
+          </div>
+          {view === 'active' && !creating && (
+            <button className="primary" onClick={() => setCreating(true)}>
+              New project
+            </button>
+          )}
+        </div>
       </header>
 
-      {creating && <NewProjectForm onDone={() => setCreating(false)} />}
+      {view === 'active' ? (
+        <>
+          {creating && <NewProjectForm onDone={() => setCreating(false)} />}
+          <ActiveProjects hideEmptyMessage={creating} />
+        </>
+      ) : (
+        <CompletedList />
+      )}
+    </main>
+  )
+}
 
+function ActiveProjects({ hideEmptyMessage }: { hideEmptyMessage: boolean }) {
+  const { data: projects, isPending, error } = useDashboard()
+
+  return (
+    <>
       {isPending && <p className="muted">Loading…</p>}
       {error && <p className="error">Couldn't load the dashboard: {error.message}. Is the API running?</p>}
-      {projects?.length === 0 && !creating && <p className="muted">No active projects. Create one to get started.</p>}
+      {projects?.length === 0 && !hideEmptyMessage && (
+        <p className="muted">No active projects. Create one to get started.</p>
+      )}
 
       <section className="tiles">
         {/* Order comes from the API; personal projects are already last */}
@@ -36,6 +65,6 @@ export function DashboardPage() {
           </Fragment>
         ))}
       </section>
-    </main>
+    </>
   )
 }

@@ -5,41 +5,49 @@ import type { ProjectCreate, ProjectStageCreate, ProjectStageUpdate, ProjectUpda
 
 const keys = {
   dashboard: ['dashboard'] as const,
+  projects: ['projects'] as const,
   stageTypes: ['stage-types'] as const,
 }
 
 export const useDashboard = () => useQuery({ queryKey: keys.dashboard, queryFn: api.dashboard })
 
+export const useCompletedProjects = () =>
+  useQuery({ queryKey: [...keys.projects, { completed: true }], queryFn: () => api.projects(true) })
+
 export const useStageTypes = () => useQuery({ queryKey: keys.stageTypes, queryFn: api.stageTypes })
 
 /**
- * Every change goes to the backend, then the dashboard is refetched so the
+ * Every change goes to the backend, then the project views are refetched so the
  * backend re-applies its urgency rules. React never recomputes flags or order.
  */
-function useDashboardMutation<TArgs, TResult>(fn: (args: TArgs) => Promise<TResult>) {
+function useProjectMutation<TArgs, TResult>(fn: (args: TArgs) => Promise<TResult>) {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: fn,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: keys.dashboard }),
+    onSuccess: () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: keys.dashboard }),
+        queryClient.invalidateQueries({ queryKey: keys.projects }),
+      ]),
   })
 }
 
-export const useCreateProject = () => useDashboardMutation((body: ProjectCreate) => api.createProject(body))
+export const useCreateProject = () => useProjectMutation((body: ProjectCreate) => api.createProject(body))
 
 export const useUpdateProject = () =>
-  useDashboardMutation(({ id, body }: { id: number; body: ProjectUpdate }) => api.updateProject(id, body))
+  useProjectMutation(({ id, body }: { id: number; body: ProjectUpdate }) => api.updateProject(id, body))
 
-export const useDeleteProject = () => useDashboardMutation((id: number) => api.deleteProject(id))
+export const useDeleteProject = () => useProjectMutation((id: number) => api.deleteProject(id))
 
 export const useAddStage = () =>
-  useDashboardMutation(({ projectId, body }: { projectId: number; body: ProjectStageCreate }) =>
+  useProjectMutation(({ projectId, body }: { projectId: number; body: ProjectStageCreate }) =>
     api.addStage(projectId, body),
   )
 
 export const useUpdateStage = () =>
-  useDashboardMutation(({ id, body }: { id: number; body: ProjectStageUpdate }) => api.updateStage(id, body))
+  useProjectMutation(({ id, body }: { id: number; body: ProjectStageUpdate }) => api.updateStage(id, body))
 
-export const useDeleteStage = () => useDashboardMutation((id: number) => api.deleteStage(id))
+export const useDeleteStage = () => useProjectMutation((id: number) => api.deleteStage(id))
 
 export function useCreateStageType() {
   const queryClient = useQueryClient()

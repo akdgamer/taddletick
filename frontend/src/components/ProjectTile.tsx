@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useAddStage, useDeleteProject, useStageTypes, useUpdateProject } from '../api/hooks'
 import type { DashboardProject } from '../api/types'
 import { dispatchText, formatDate } from '../format'
+import { EditProjectForm } from './EditProjectForm'
 import { StageRow } from './StageRow'
 
 export function ProjectTile({ project }: { project: DashboardProject }) {
@@ -11,6 +12,7 @@ export function ProjectTile({ project }: { project: DashboardProject }) {
   const deleteProject = useDeleteProject()
   const addStage = useAddStage()
   const [confirmingDelete, setConfirmingDelete] = useState(false)
+  const [editing, setEditing] = useState(false)
 
   const usedTypeIds = new Set(project.stages.map((s) => s.stage_type_id))
   const availableTypes = stageTypes.filter((t) => !usedTypeIds.has(t.id))
@@ -18,26 +20,35 @@ export function ProjectTile({ project }: { project: DashboardProject }) {
 
   return (
     <article className={`tile flag-${project.flag}`} aria-label={project.name}>
-      <header className="tile-header">
-        <h2>{project.name}</h2>
-        <div className="badges">
-          {project.is_p0 && <span className="badge badge-p0">P0</span>}
-          {project.label === 'personal' && <span className="badge">Personal</span>}
-        </div>
-      </header>
+      {editing ? (
+        <EditProjectForm project={project} onDone={() => setEditing(false)} />
+      ) : (
+        <>
+          <header className="tile-header">
+            <h2>{project.name}</h2>
+            <div className="badges">
+              {project.is_p0 && <span className="badge badge-p0">P0</span>}
+              {project.label === 'personal' && <span className="badge">Personal</span>}
+              <button className="link-button" onClick={() => setEditing(true)}>
+                Edit
+              </button>
+            </div>
+          </header>
 
-      {(project.client_name || project.po_number) && (
-        <p className="tile-meta">
-          {[project.client_name, project.po_number && `PO ${project.po_number}`].filter(Boolean).join(' · ')}
-        </p>
+          {(project.client_name || project.po_number) && (
+            <p className="tile-meta">
+              {[project.client_name, project.po_number && `PO ${project.po_number}`].filter(Boolean).join(' · ')}
+            </p>
+          )}
+
+          <p className={`dispatch flag-${project.dispatch_flag}`}>
+            {dispatchText(project.days_to_dispatch)}
+            {project.dispatch_date && <span className="muted"> · {formatDate(project.dispatch_date)}</span>}
+          </p>
+
+          {project.notes && <p className="tile-notes">{project.notes}</p>}
+        </>
       )}
-
-      <p className={`dispatch flag-${project.dispatch_flag}`}>
-        {dispatchText(project.days_to_dispatch)}
-        {project.dispatch_date && <span className="muted"> · {formatDate(project.dispatch_date)}</span>}
-      </p>
-
-      {project.notes && <p className="tile-notes">{project.notes}</p>}
 
       {project.stages.length > 0 ? (
         <ul className="stages">

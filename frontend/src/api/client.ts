@@ -40,6 +40,7 @@ export const api = {
   stageTypes: () => request<StageType[]>('GET', '/stage-types'),
   createStageType: (name: string) => request<StageType>('POST', '/stage-types', { name }),
 
+  projects: (completed: boolean) => request<Project[]>('GET', `/projects?completed=${completed}`),
   createProject: (body: ProjectCreate) => request<Project>('POST', '/projects', body),
   updateProject: (id: number, body: ProjectUpdate) => request<Project>('PATCH', `/projects/${id}`, body),
   deleteProject: (id: number) => request<void>('DELETE', `/projects/${id}`),

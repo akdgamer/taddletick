@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import func, select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from app.db import get_session
 from app.models import Project, ProjectStage, StageType
@@ -27,6 +27,17 @@ def check_stage_types_exist(session: Session, ids: list[int]) -> None:
     missing = set(ids) - found
     if missing:
         raise HTTPException(422, f"Unknown stage type ids: {sorted(missing)}")
+
+
+@router.get("", response_model=list[ProjectRead])
+def list_projects(completed: bool = False, session: Session = Depends(get_session)):
+    """Plain list for browsing, e.g. completed projects; the dashboard handles urgency."""
+    return session.scalars(
+        select(Project)
+        .where(Project.is_completed.is_(completed))
+        .options(selectinload(Project.stages))
+        .order_by(Project.updated_at.desc(), Project.id.desc())
+    ).all()
 
 
 @router.get("/{project_id}", response_model=ProjectRead)

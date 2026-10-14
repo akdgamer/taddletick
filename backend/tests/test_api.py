@@ -65,6 +65,37 @@ def test_update_and_delete_stage(client):
     assert len(client.get(f"/projects/{project['id']}").json()["stages"]) == 2
 
 
+def test_list_projects_filters_by_completed(client):
+    active = create_project(client, name="Active")
+    first = create_project(client, name="Done first")
+    second = create_project(client, name="Done second")
+    client.patch(f"/projects/{first['id']}", json={"is_completed": True})
+    client.patch(f"/projects/{second['id']}", json={"is_completed": True})
+
+    completed = client.get("/projects", params={"completed": True}).json()
+    # Most recently changed first
+    assert [p["name"] for p in completed] == ["Done second", "Done first"]
+    assert len(completed[0]["stages"]) == 3
+
+    assert [p["id"] for p in client.get("/projects").json()] == [active["id"]]
+
+
+def test_restore_completed_project(client):
+    project = create_project(client)
+    client.patch(f"/projects/{project['id']}", json={"is_completed": True})
+    assert client.get("/dashboard").json() == []
+
+    client.patch(f"/projects/{project['id']}", json={"is_completed": False})
+    assert [p["id"] for p in client.get("/dashboard").json()] == [project["id"]]
+
+
+def test_patch_can_clear_optional_fields(client):
+    project = create_project(client, po_number="PO-1", dispatch_date="2026-04-01")
+    updated = client.patch(f"/projects/{project['id']}", json={"po_number": None, "dispatch_date": None}).json()
+    assert updated["po_number"] is None
+    assert updated["dispatch_date"] is None
+
+
 def test_delete_project_removes_its_stages(client):
     project = create_project(client)
     assert client.delete(f"/projects/{project['id']}").status_code == 204
