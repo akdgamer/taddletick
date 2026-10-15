@@ -113,11 +113,12 @@ function PasswordSection() {
             />
           </label>
           <label>
-            New password <span className="muted">(8+ characters)</span>
+            New password
             <input
               required
               type="password"
               minLength={8}
+              placeholder="At least 8 characters"
               autoComplete="new-password"
               value={f.next}
               onChange={(e) => set('next', e.target.value)}

@@ -20,7 +20,7 @@ export function TodayPanel() {
   return (
     <section className="panel" aria-label="Today">
       <h2>
-        Today <span className="muted">{tasks.length ? `${open} open` : ''}</span>
+        Today <span className="panel-count">{tasks.length ? `${open} open` : ''}</span>
       </h2>
       {tasks.length === 0 && <p className="muted">Nothing on today's list.</p>}
       <ul className="today-list">
@@ -73,11 +73,14 @@ export function ChasePanel() {
           const contact = p.contacts.find((c) => c.phone || c.email)
           return (
             <li key={p.id} className={`flag-${p.flag}`}>
-              <div>
-                <strong>{formatMoney(outstanding)}</strong> · {p.project.name}
-                {p.client && <span className="muted"> ({p.client.name})</span>}
+              <div className="chase-head">
+                <span>
+                  {p.project.name}
+                  {p.client && <span className="muted"> · {p.client.name}</span>}
+                </span>
+                <strong className="money">{formatMoney(outstanding)}</strong>
               </div>
-              <div className="muted">
+              <div className={`chase-due flag-${p.flag}`}>
                 {p.label} · {p.flag === 'red' ? 'overdue since' : 'due'} {p.due_date && formatDate(p.due_date)}
                 {p.project.is_completed && ' · project completed'}
               </div>

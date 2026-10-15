@@ -2,8 +2,7 @@ import { useState } from 'react'
 
 type Theme = 'auto' | 'light' | 'dark'
 
-const NEXT: Record<Theme, Theme> = { auto: 'light', light: 'dark', dark: 'auto' }
-const LABELS: Record<Theme, string> = { auto: 'Theme: auto', light: 'Theme: light', dark: 'Theme: dark' }
+const LABELS: Record<Theme, string> = { auto: 'Auto', light: 'Light', dark: 'Dark' }
 const KEY = 'theme'
 
 function readTheme(): Theme {
@@ -27,18 +26,24 @@ function applyTheme(theme: Theme) {
   }
 }
 
+/** Auto / Light / Dark switch (lives in the user menu). */
 export function ThemeToggle() {
   const [theme, setTheme] = useState<Theme>(readTheme)
 
-  const cycle = () => {
-    const next = NEXT[theme]
-    applyTheme(next)
-    setTheme(next)
-  }
-
   return (
-    <button className="theme-toggle" onClick={cycle} title="Switch between auto, light and dark">
-      {LABELS[theme]}
-    </button>
+    <div className="segmented" role="group" aria-label="Appearance">
+      {(Object.keys(LABELS) as Theme[]).map((t) => (
+        <button
+          key={t}
+          aria-pressed={theme === t}
+          onClick={() => {
+            applyTheme(t)
+            setTheme(t)
+          }}
+        >
+          {LABELS[t]}
+        </button>
+      ))}
+    </div>
   )
 }

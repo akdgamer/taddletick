@@ -7,11 +7,11 @@ export const STATUS_LABELS: Record<StageStatus, string> = {
   done: 'Done',
 }
 
-export function dispatchText(days: number | null): string {
-  if (days === null) return 'No dispatch date'
-  if (days === 0) return 'Dispatch today'
-  if (days < 0) return `Dispatch ${plural(-days, 'day')} overdue`
-  return `Dispatch in ${plural(days, 'day')}`
+/** "in 12 days", "today", "3 days overdue": how far away a deadline is */
+export function relativeDays(days: number): string {
+  if (days === 0) return 'today'
+  if (days < 0) return `${plural(-days, 'day')} overdue`
+  return `in ${plural(days, 'day')}`
 }
 
 export function formatDate(iso: string): string {
@@ -20,7 +20,35 @@ export function formatDate(iso: string): string {
   return new Date(y, m - 1, d).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
-function plural(n: number, word: string): string {
+/** "13 Oct", or "13 Oct 2027" when it isn't this year: for compact rows */
+export function shortDate(iso: string): string {
+  const [y, m, d] = iso.split('-').map(Number)
+  const sameYear = y === new Date().getFullYear()
+  return new Date(y, m - 1, d).toLocaleDateString(undefined, {
+    day: 'numeric',
+    month: 'short',
+    ...(sameYear ? {} : { year: 'numeric' }),
+  })
+}
+
+/** Whole days from today to an ISO date (negative = in the past). Display only; flags come from the API. */
+export function daysFrom(iso: string, today = todayIso()): number {
+  const toUtc = (s: string) => {
+    const [y, m, d] = s.split('-').map(Number)
+    return Date.UTC(y, m - 1, d)
+  }
+  return Math.round((toUtc(iso) - toUtc(today)) / 86_400_000)
+}
+
+/** "Due 19 Oct", "Due today", "2 days late" */
+export function dueText(iso: string): string {
+  const days = daysFrom(iso)
+  if (days < 0) return `${plural(-days, 'day')} late`
+  if (days === 0) return 'Due today'
+  return `Due ${shortDate(iso)}`
+}
+
+export function plural(n: number, word: string): string {
   return `${n} ${word}${n === 1 ? '' : 's'}`
 }
 

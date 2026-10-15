@@ -7,6 +7,7 @@ import type { User } from './api/types'
 import { ContactsPage } from './components/ContactsPage'
 import { DashboardPage } from './components/DashboardPage'
 import { LoginPage, SetupPage } from './components/LoginPage'
+import { Menu } from './components/Menu'
 import { SettingsPage } from './components/SettingsPage'
 import { TasksPage } from './components/TasksPage'
 import { ThemeToggle } from './components/ThemeToggle'
@@ -68,28 +69,71 @@ function Shell({ user }: { user: User }) {
   const isAdmin = useCan('is_admin')
   const logout = useLogout()
   const [page, setPage] = useState<Page>(initialPage === 'users' && !isAdmin ? 'projects' : initialPage)
-  const pages = (Object.keys(PAGES) as Page[]).filter((p) => p !== 'users' || isAdmin)
+  // Settings lives in the user menu; the tabs are the everyday pages
+  const tabs = (Object.keys(PAGES) as Page[]).filter((p) => p !== 'settings' && (p !== 'users' || isAdmin))
+  const initials = user.display_name
+    .split(/\s+/)
+    .map((w) => w[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase()
 
   return (
     <>
-      <nav className="app-nav" aria-label="Main">
-        <span className="app-name">
-          <img src="/logo-mark.png" alt="" />
-          Taddletick
-        </span>
-        {pages.map((p) => (
-          <button key={p} aria-current={page === p ? 'page' : undefined} onClick={() => setPage(p)}>
-            {PAGES[p]}
-          </button>
-        ))}
-        <span className="nav-end">
-          <ThemeToggle />
-          <span className="nav-user" title={`${user.username} · ${user.role.name}`}>
-            {user.display_name}
+      <header className="app-bar">
+        <nav className="app-nav" aria-label="Main">
+          <span className="app-name">
+            <img src="/logo-mark.png" alt="" />
+            <span className="app-title">Taddletick</span>
           </span>
-          <button onClick={() => logout.mutate()}>Log out</button>
-        </span>
-      </nav>
+          <div className="nav-tabs">
+            {tabs.map((p) => (
+              <button key={p} aria-current={page === p ? 'page' : undefined} onClick={() => setPage(p)}>
+                {PAGES[p]}
+              </button>
+            ))}
+          </div>
+          <Menu
+            label="Account"
+            triggerClassName="avatar-button"
+            trigger={
+              <>
+                <span className="avatar" aria-hidden>
+                  {initials}
+                </span>
+                <span className="avatar-name">{user.display_name}</span>
+              </>
+            }
+          >
+            {(close) => (
+              <>
+                <div className="menu-header">
+                  <strong>{user.display_name}</strong>
+                  <span className="muted">
+                    {user.username} · {user.role.name}
+                  </span>
+                </div>
+                <div className="menu-section">
+                  <span className="menu-label">Appearance</span>
+                  <ThemeToggle />
+                </div>
+                <button
+                  role="menuitem"
+                  onClick={() => {
+                    setPage('settings')
+                    close()
+                  }}
+                >
+                  Settings
+                </button>
+                <button role="menuitem" onClick={() => logout.mutate()}>
+                  Log out
+                </button>
+              </>
+            )}
+          </Menu>
+        </nav>
+      </header>
       {page === 'projects' && <DashboardPage />}
       {page === 'tasks' && <TasksPage />}
       {page === 'contacts' && <ContactsPage />}

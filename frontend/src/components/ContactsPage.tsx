@@ -34,7 +34,7 @@ export function ContactsPage() {
   const noCompany = allContacts.filter((c) => c.client === null)
 
   return (
-    <main className="page">
+    <main className="page narrow">
       <header className="page-header">
         <h1>Contacts</h1>
         <div className="header-actions">

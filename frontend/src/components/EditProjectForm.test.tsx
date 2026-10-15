@@ -39,7 +39,8 @@ describe('editing a project', () => {
     const user = userEvent.setup()
     renderWithQuery(<ProjectTile project={project} />)
 
-    await user.click(screen.getByRole('button', { name: 'Edit' }))
+    await user.click(screen.getByRole('button', { name: 'Actions for Welding fixture' }))
+    await user.click(screen.getByRole('menuitem', { name: 'Edit details' }))
     const po = screen.getByLabelText('PO number')
     expect(po).toHaveValue('4501')
 
@@ -60,7 +61,8 @@ describe('editing a project', () => {
     const user = userEvent.setup()
     renderWithQuery(<ProjectTile project={project} />)
 
-    await user.click(screen.getByRole('button', { name: 'Edit' }))
+    await user.click(screen.getByRole('button', { name: 'Actions for Welding fixture' }))
+    await user.click(screen.getByRole('menuitem', { name: 'Edit details' }))
     await user.type(screen.getByLabelText('Name'), ' v2')
     await user.click(screen.getByRole('button', { name: 'Cancel' }))
 

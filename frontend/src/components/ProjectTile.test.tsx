@@ -1,5 +1,6 @@
 import { screen, within } from '@testing-library/react'
-import { beforeEach, describe, expect, it } from 'vitest'
+import userEvent from '@testing-library/user-event'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { DashboardProject } from '../api/types'
 import { mockFetch, renderWithQuery, FULL_ACCESS } from '../test/render'
@@ -32,6 +33,9 @@ const project: DashboardProject = {
 describe('ProjectTile', () => {
   beforeEach(() => {
     mockFetch()
+    // "Today" is pinned so "N days late" doesn't depend on when the tests run
+    vi.useFakeTimers({ toFake: ['Date'], now: new Date(2026, 2, 1) })
+    return () => vi.useRealTimers()
   })
 
   it('shows header info, P0 badge and dispatch countdown', () => {
@@ -39,7 +43,7 @@ describe('ProjectTile', () => {
     expect(screen.getByRole('heading', { name: 'Welding fixture' })).toBeInTheDocument()
     expect(screen.getByText('P0')).toBeInTheDocument()
     expect(screen.getByText('Acme · PO 4501')).toBeInTheDocument()
-    expect(screen.getByText(/Dispatch in 3 days/)).toHaveClass('flag-amber')
+    expect(screen.getByText('in 3 days').closest('.dispatch')).toHaveClass('flag-amber')
   })
 
   it('applies the flags the API sent to the tile and its stages', () => {
@@ -47,9 +51,18 @@ describe('ProjectTile', () => {
     expect(screen.getByRole('article', { name: 'Welding fixture' })).toHaveClass('flag-red')
 
     const rows = screen.getAllByRole('listitem')
-    // Keeps the API's order (done stage already moved to the bottom)
     expect(within(rows[0]).getByText('Ordering parts')).toBeInTheDocument()
     expect(rows[0]).toHaveClass('flag-red')
+    expect(within(rows[0]).getByText('9 days late')).toBeInTheDocument()
+  })
+
+  it('folds completed stages away until asked', async () => {
+    const user = userEvent.setup()
+    renderWithQuery(<ProjectTile project={project} />)
+    expect(screen.getAllByRole('listitem')).toHaveLength(1)
+
+    await user.click(screen.getByRole('button', { name: /1 completed stage/ }))
+    const rows = screen.getAllByRole('listitem')
     expect(rows[1]).toHaveClass('status-done')
   })
 
@@ -57,14 +70,14 @@ describe('ProjectTile', () => {
     renderWithQuery(<ProjectTile project={project} />)
     const addStage = await screen.findByRole('combobox', { name: 'Add stage' })
     const options = within(addStage).getAllByRole('option').map((o) => o.textContent)
-    expect(options).toEqual(['+ Add stage…', 'Electrical design'])
+    expect(options).toEqual(['+ Add stage', 'Electrical design'])
   })
 
   it('hides changes the role may not make', () => {
     const readOnly = { can_edit: false, can_delete: false, can_view_payments: false, can_edit_payments: false }
     renderWithQuery(<ProjectTile project={{ ...project, access: readOnly }} />)
-    expect(screen.queryByRole('button', { name: 'Edit' })).not.toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'Delete' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Actions for Welding fixture' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('combobox', { name: 'Add stage' })).not.toBeInTheDocument()
     expect(screen.queryByText('Payments')).not.toBeInTheDocument()
     expect(screen.getByRole('combobox', { name: 'Ordering parts status' })).toBeDisabled()
   })
