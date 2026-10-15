@@ -1360,9 +1360,9 @@ fieldset.stage-picker legend {
   margin-top: 2px;
 }
 
+/* A list that is also a card (Tasks page): .contact-list's padding: 0 would otherwise win */
 .card.contact-list {
-  padding-top: 4px;
-  padding-bottom: 4px;
+  padding: 4px 18px;
 }
 
 .card.contact-list > .contact-item:first-child {

@@ -44,11 +44,13 @@ export function TasksPage() {
       )}
       {isPending && <p className="muted">Loading…</p>}
       {!isPending && tasks.length === 0 && <p className="muted">No tasks yet.</p>}
-      <ul className="contact-list card">
-        {tasks.map((t) => (
-          <TaskItem key={t.id} task={t} />
-        ))}
-      </ul>
+      {tasks.length > 0 && (
+        <ul className="contact-list card">
+          {tasks.map((t) => (
+            <TaskItem key={t.id} task={t} />
+          ))}
+        </ul>
+      )}
     </main>
   )
 }
