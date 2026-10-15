@@ -442,8 +442,16 @@ textarea {
 }
 
 .app-name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   font-weight: 700;
   margin-right: 16px;
+}
+
+.app-name img {
+  width: 24px;
+  height: 24px;
 }
 
 .app-nav button {

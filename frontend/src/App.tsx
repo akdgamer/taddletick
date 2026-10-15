@@ -27,7 +27,10 @@ export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <nav className="app-nav" aria-label="Main">
-        <span className="app-name">Taddletick</span>
+        <span className="app-name">
+          <img src="/logo-mark.png" alt="" />
+          Taddletick
+        </span>
         {(Object.keys(PAGES) as Page[]).map((p) => (
           <button key={p} aria-current={page === p ? 'page' : undefined} onClick={() => setPage(p)}>
             {PAGES[p]}
