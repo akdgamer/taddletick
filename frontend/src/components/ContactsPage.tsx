@@ -3,6 +3,7 @@ import { useState, type FormEvent } from 'react'
 import {
   useClients,
   useContacts,
+  useCan,
   useCreateClient,
   useCreateContact,
   useDeleteClient,
@@ -28,6 +29,7 @@ export function ContactsPage() {
   const { data: allContacts = [] } = useContacts()
   const [search, setSearch] = useState('')
   const [adding, setAdding] = useState<'client' | 'contact' | null>(null)
+  const canEdit = useCan('can_edit')
 
   const noCompany = allContacts.filter((c) => c.client === null)
 
@@ -43,10 +45,14 @@ export function ContactsPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
-          <button onClick={() => setAdding('client')}>New client</button>
-          <button className="primary" onClick={() => setAdding('contact')}>
-            New contact
-          </button>
+          {canEdit && (
+            <>
+              <button onClick={() => setAdding('client')}>New client</button>
+              <button className="primary" onClick={() => setAdding('contact')}>
+                New contact
+              </button>
+            </>
+          )}
         </div>
       </header>
 
@@ -102,6 +108,8 @@ function SearchResults({ q }: { q: string }) {
 
 function ClientSection({ client }: { client: Client }) {
   const deleteClient = useDeleteClient()
+  const canEdit = useCan('can_edit')
+  const canDelete = useCan('can_delete')
   const [editing, setEditing] = useState(false)
   const [addingContact, setAddingContact] = useState(false)
   const [confirmingDelete, setConfirmingDelete] = useState(false)
@@ -118,19 +126,22 @@ function ClientSection({ client }: { client: Client }) {
             {client.notes && <p className="tile-meta">{client.notes}</p>}
           </div>
           <div className="row-actions">
-            <button className="link-button" onClick={() => setEditing(true)}>
-              Edit
-            </button>
-            {confirmingDelete ? (
-              <>
-                <button className="danger" onClick={() => deleteClient.mutate(client.id)}>
-                  Confirm delete
-                </button>
-                <button onClick={() => setConfirmingDelete(false)}>Cancel</button>
-              </>
-            ) : (
-              <button onClick={() => setConfirmingDelete(true)}>Delete</button>
+            {canEdit && (
+              <button className="link-button" onClick={() => setEditing(true)}>
+                Edit
+              </button>
             )}
+            {canDelete &&
+              (confirmingDelete ? (
+                <>
+                  <button className="danger" onClick={() => deleteClient.mutate(client.id)}>
+                    Confirm delete
+                  </button>
+                  <button onClick={() => setConfirmingDelete(false)}>Cancel</button>
+                </>
+              ) : (
+                <button onClick={() => setConfirmingDelete(true)}>Delete</button>
+              ))}
           </div>
         </header>
       )}
@@ -141,9 +152,11 @@ function ClientSection({ client }: { client: Client }) {
       {addingContact ? (
         <ContactForm initial={emptyContact(client.id)} onDone={() => setAddingContact(false)} />
       ) : (
-        <button className="link-button" onClick={() => setAddingContact(true)}>
-          + Add contact
-        </button>
+        canEdit && (
+          <button className="link-button" onClick={() => setAddingContact(true)}>
+            + Add contact
+          </button>
+        )
       )}
     </section>
   )
@@ -162,6 +175,8 @@ function ContactList({ contacts }: { contacts: Contact[] }) {
 
 function ContactItem({ contact }: { contact: Contact }) {
   const deleteContact = useDeleteContact()
+  const canEdit = useCan('can_edit')
+  const canDelete = useCan('can_delete')
   const [editing, setEditing] = useState(false)
   const [confirmingDelete, setConfirmingDelete] = useState(false)
 
@@ -177,19 +192,22 @@ function ContactItem({ contact }: { contact: Contact }) {
     <li className="contact-item" aria-label={contact.name}>
       <ContactCard contact={contact} />
       <div className="row-actions">
-        <button className="link-button" onClick={() => setEditing(true)}>
-          Edit
-        </button>
-        {confirmingDelete ? (
-          <>
-            <button className="danger" onClick={() => deleteContact.mutate(contact.id)}>
-              Confirm delete
-            </button>
-            <button onClick={() => setConfirmingDelete(false)}>Cancel</button>
-          </>
-        ) : (
-          <button onClick={() => setConfirmingDelete(true)}>Delete</button>
+        {canEdit && (
+          <button className="link-button" onClick={() => setEditing(true)}>
+            Edit
+          </button>
         )}
+        {canDelete &&
+          (confirmingDelete ? (
+            <>
+              <button className="danger" onClick={() => deleteContact.mutate(contact.id)}>
+                Confirm delete
+              </button>
+              <button onClick={() => setConfirmingDelete(false)}>Cancel</button>
+            </>
+          ) : (
+            <button onClick={() => setConfirmingDelete(true)}>Delete</button>
+          ))}
       </div>
       {deleteContact.error && <p className="error">{deleteContact.error.message}</p>}
     </li>
@@ -204,7 +222,11 @@ function ClientForm({ client, onDone }: { client?: Client; onDone: () => void })
 
   const submit = (e: FormEvent) => {
     e.preventDefault()
-    const body = { name: fields.name.trim(), address: fields.address, notes: fields.notes }
+    const body = {
+      name: fields.name.trim(),
+      address: fields.address,
+      notes: fields.notes,
+    }
     if (client) updateClient.mutate({ id: client.id, body }, { onSuccess: onDone })
     else createClient.mutate(body, { onSuccess: onDone })
   }

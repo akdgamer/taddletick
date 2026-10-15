@@ -5,7 +5,13 @@ import type { DashboardStage, StageStatus } from '../api/types'
 import { STATUS_LABELS } from '../format'
 import { Stakeholders } from './Stakeholders'
 
-export function StageRow({ stage }: { stage: DashboardStage }) {
+interface Props {
+  stage: DashboardStage
+  canEdit: boolean
+  canDelete: boolean
+}
+
+export function StageRow({ stage, canEdit, canDelete }: Props) {
   const updateStage = useUpdateStage()
   const deleteStage = useDeleteStage()
   const [notes, setNotes] = useState(stage.notes)
@@ -20,6 +26,7 @@ export function StageRow({ stage }: { stage: DashboardStage }) {
 
       <select
         aria-label={`${stage.name} status`}
+        disabled={!canEdit}
         value={stage.status}
         onChange={(e) => update({ status: e.target.value as StageStatus })}
       >
@@ -33,6 +40,7 @@ export function StageRow({ stage }: { stage: DashboardStage }) {
       <input
         type="date"
         aria-label={`${stage.name} due date`}
+        disabled={!canEdit}
         value={stage.due_date ?? ''}
         onChange={(e) => update({ due_date: e.target.value || null })}
       />
@@ -40,25 +48,30 @@ export function StageRow({ stage }: { stage: DashboardStage }) {
       <input
         className="stage-notes"
         aria-label={`${stage.name} notes`}
-        placeholder="Notes"
+        readOnly={!canEdit}
+        placeholder={canEdit ? 'Notes' : ''}
         value={notes}
         onChange={(e) => setNotes(e.target.value)}
         // Save when leaving the field, not on every keystroke
         onBlur={() => notes !== stage.notes && update({ notes })}
       />
 
-      <button
-        className="icon-button"
-        aria-label={`Remove ${stage.name}`}
-        title="Remove stage"
-        onClick={() => deleteStage.mutate(stage.id)}
-      >
-        ×
-      </button>
+      {canDelete ? (
+        <button
+          className="icon-button"
+          aria-label={`Remove ${stage.name}`}
+          title="Remove stage"
+          onClick={() => deleteStage.mutate(stage.id)}
+        >
+          ×
+        </button>
+      ) : (
+        <span />
+      )}
 
       {/* Finished stages with nobody attached don't need a people row */}
-      {(stage.status !== 'done' || stage.contacts.length > 0) && (
-        <Stakeholders stageId={stage.id} stageName={stage.name} contacts={stage.contacts} />
+      {(stage.contacts.length > 0 || (canEdit && stage.status !== 'done')) && (
+        <Stakeholders stageId={stage.id} stageName={stage.name} contacts={stage.contacts} readOnly={!canEdit} />
       )}
     </li>
   )

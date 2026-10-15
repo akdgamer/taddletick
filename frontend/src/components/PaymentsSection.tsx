@@ -13,7 +13,17 @@ const EMPTY: PaymentFields = {
   notes: '',
 }
 
-export function PaymentsSection({ projectId, payments }: { projectId: number; payments: DashboardPayment[] }) {
+interface Rights {
+  canEdit: boolean // add, edit, mark received
+  canDelete: boolean
+}
+
+export function PaymentsSection({
+  projectId,
+  payments,
+  canEdit,
+  canDelete,
+}: { projectId: number; payments: DashboardPayment[] } & Rights) {
   const [adding, setAdding] = useState(false)
   const expected = payments.reduce((sum, p) => sum + p.expected_amount, 0)
   const received = payments.reduce((sum, p) => sum + p.received_amount, 0)
@@ -32,22 +42,24 @@ export function PaymentsSection({ projectId, payments }: { projectId: number; pa
       {payments.length > 0 && (
         <ul className="payment-list">
           {payments.map((p) => (
-            <PaymentRow key={p.id} payment={p} />
+            <PaymentRow key={p.id} payment={p} canEdit={canEdit} canDelete={canDelete} />
           ))}
         </ul>
       )}
       {adding ? (
         <PaymentForm projectId={projectId} onDone={() => setAdding(false)} />
       ) : (
-        <button className="link-button" onClick={() => setAdding(true)}>
-          + Add payment
-        </button>
+        canEdit && (
+          <button className="link-button" onClick={() => setAdding(true)}>
+            + Add payment
+          </button>
+        )
       )}
     </details>
   )
 }
 
-function PaymentRow({ payment }: { payment: DashboardPayment }) {
+function PaymentRow({ payment, canEdit, canDelete }: { payment: DashboardPayment } & Rights) {
   const updatePayment = useUpdatePayment()
   const deletePayment = useDeletePayment()
   const [editing, setEditing] = useState(false)
@@ -74,31 +86,50 @@ function PaymentRow({ payment }: { payment: DashboardPayment }) {
       <span className="payment-amount">{formatMoney(payment.expected_amount)}</span>
       <span className="payment-status">{status}</span>
       <span className="row-actions">
-        {!payment.is_paid && (
+        {canEdit && !payment.is_paid && (
           <button
             onClick={() =>
               updatePayment.mutate({
                 id: payment.id,
-                body: { received_amount: payment.expected_amount, received_date: todayIso() },
+                body: {
+                  received_amount: payment.expected_amount,
+                  received_date: todayIso(),
+                },
               })
             }
           >
             Mark received
           </button>
         )}
-        <button className="link-button" onClick={() => setEditing(true)}>
-          Edit
-        </button>
-        <button className="icon-button" aria-label={`Delete payment ${payment.label}`} onClick={() => deletePayment.mutate(payment.id)}>
-          ×
-        </button>
+        {canEdit && (
+          <button className="link-button" onClick={() => setEditing(true)}>
+            Edit
+          </button>
+        )}
+        {canDelete && (
+          <button
+            className="icon-button"
+            aria-label={`Delete payment ${payment.label}`}
+            onClick={() => deletePayment.mutate(payment.id)}
+          >
+            ×
+          </button>
+        )}
       </span>
       {payment.notes && <span className="payment-notes muted">{payment.notes}</span>}
     </li>
   )
 }
 
-function PaymentForm({ projectId, payment, onDone }: { projectId?: number; payment?: DashboardPayment; onDone: () => void }) {
+function PaymentForm({
+  projectId,
+  payment,
+  onDone,
+}: {
+  projectId?: number
+  payment?: DashboardPayment
+  onDone: () => void
+}) {
   const addPayment = useAddPayment()
   const updatePayment = useUpdatePayment()
   const mutation = payment ? updatePayment : addPayment

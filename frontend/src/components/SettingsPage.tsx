@@ -1,5 +1,7 @@
+import { useState, type FormEvent } from 'react'
+
 import { api } from '../api/client'
-import { useGoogleDisconnect, useGoogleStatus, useGoogleSync } from '../api/hooks'
+import { useChangePassword, useGoogleDisconnect, useGoogleStatus, useGoogleSync } from '../api/hooks'
 
 const RESULT_MESSAGES: Record<string, string> = {
   connected: 'Google connected. The first sync runs within a few minutes, or press Sync now.',
@@ -21,9 +23,10 @@ export function SettingsPage({ googleResult }: { googleResult: string | null }) 
       <section className="card">
         <h2>Google Calendar &amp; Tasks</h2>
         <p className="muted">
-          Dispatch dates, unfinished stage due dates and unpaid payment due dates are copied to a calendar named
-          "Taddletick", with a reminder at 9:00 the day before. Today's open tasks are copied to a Google Tasks list of
-          the same name. Copying is one way: changes made in Google are overwritten.
+          Connect your own Google account. Dispatch dates, unfinished stage due dates and (if your role can see them)
+          unpaid payment due dates of the projects you can see are copied to a calendar named "Taddletick", with a
+          reminder at 9:00 the day before. Your open tasks for today go to a Google Tasks list of the same name. Copying
+          is one way: changes made in Google are overwritten.
         </p>
 
         {googleResult && RESULT_MESSAGES[googleResult] && <p className="notice">{RESULT_MESSAGES[googleResult]}</p>}
@@ -73,6 +76,73 @@ export function SettingsPage({ googleResult }: { googleResult: string | null }) 
           </>
         )}
       </section>
+
+      <PasswordSection />
     </main>
+  )
+}
+
+function PasswordSection() {
+  const change = useChangePassword()
+  const [f, setF] = useState({ current: '', next: '', confirm: '' })
+  const set = (key: keyof typeof f, value: string) => setF({ ...f, [key]: value })
+  const mismatch = f.confirm !== '' && f.next !== f.confirm
+
+  const submit = (e: FormEvent) => {
+    e.preventDefault()
+    if (mismatch) return
+    change.mutate(
+      { current: f.current, next: f.next },
+      { onSuccess: () => setF({ current: '', next: '', confirm: '' }) },
+    )
+  }
+
+  return (
+    <section className="card">
+      <h2>Password</h2>
+      <form className="stack-form" onSubmit={submit}>
+        <div className="form-grid">
+          <label>
+            Current password
+            <input
+              required
+              type="password"
+              autoComplete="current-password"
+              value={f.current}
+              onChange={(e) => set('current', e.target.value)}
+            />
+          </label>
+          <label>
+            New password <span className="muted">(8+ characters)</span>
+            <input
+              required
+              type="password"
+              minLength={8}
+              autoComplete="new-password"
+              value={f.next}
+              onChange={(e) => set('next', e.target.value)}
+            />
+          </label>
+          <label>
+            New password again
+            <input
+              required
+              type="password"
+              autoComplete="new-password"
+              value={f.confirm}
+              onChange={(e) => set('confirm', e.target.value)}
+            />
+          </label>
+        </div>
+        {mismatch && <p className="error">The new passwords don't match.</p>}
+        {change.error && <p className="error">{change.error.message}</p>}
+        {change.isSuccess && <p className="muted">Password changed. Other devices have been logged out.</p>}
+        <div className="form-actions">
+          <button type="submit" className="primary" disabled={change.isPending || mismatch}>
+            Change password
+          </button>
+        </div>
+      </form>
+    </section>
   )
 }

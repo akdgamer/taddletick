@@ -30,6 +30,7 @@ describe('NewProjectForm', () => {
       dispatch_date: null,
       notes: '',
       stage_type_ids: [1, 5],
+      allowed_role_ids: [],
     })
     await vi.waitFor(() => expect(onDone).toHaveBeenCalled())
   })

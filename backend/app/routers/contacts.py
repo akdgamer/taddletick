@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
+from app.auth import require
 from app.db import get_session
 from app.models import Client, Contact
 from app.routers.clients import check_client_exists
@@ -34,7 +35,7 @@ def get_contact(contact_id: int, session: Session = Depends(get_session)):
     return get_contact_or_404(session, contact_id)
 
 
-@router.post("", response_model=ContactRead, status_code=201)
+@router.post("", response_model=ContactRead, status_code=201, dependencies=[Depends(require("can_edit"))])
 def create_contact(body: ContactCreate, session: Session = Depends(get_session)):
     check_client_exists(session, body.client_id)
     contact = Contact(**body.model_dump() | {"name": body.name.strip()})
@@ -44,7 +45,7 @@ def create_contact(body: ContactCreate, session: Session = Depends(get_session))
     return contact
 
 
-@router.patch("/{contact_id}", response_model=ContactRead)
+@router.patch("/{contact_id}", response_model=ContactRead, dependencies=[Depends(require("can_edit"))])
 def update_contact(contact_id: int, body: ContactUpdate, session: Session = Depends(get_session)):
     contact = get_contact_or_404(session, contact_id)
     changes = body.model_dump(exclude_unset=True)
@@ -57,7 +58,7 @@ def update_contact(contact_id: int, body: ContactUpdate, session: Session = Depe
     return contact
 
 
-@router.delete("/{contact_id}", status_code=204)
+@router.delete("/{contact_id}", status_code=204, dependencies=[Depends(require("can_delete"))])
 def delete_contact(contact_id: int, session: Session = Depends(get_session)):
     # Their stage links go too (ON DELETE CASCADE on the link table)
     session.delete(get_contact_or_404(session, contact_id))

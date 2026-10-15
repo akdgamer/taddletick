@@ -64,11 +64,15 @@ def payment_flag(payment: Payment, today: date) -> Flag:
     return Flag.none
 
 
-def project_flag(project: Project, today: date) -> Flag:
+# with_payments=False: for people whose role may not see payments, so a late
+# payment doesn't show up as an unexplained red flag.
+
+
+def project_flag(project: Project, today: date, with_payments: bool = True) -> Flag:
     flags = (
         [dispatch_flag(project, today)]
         + [stage_flag(s, today) for s in project.stages]
-        + [payment_flag(p, today) for p in project.payments]
+        + [payment_flag(p, today) for p in (project.payments if with_payments else [])]
     )
     if Flag.red in flags:
         return Flag.red
@@ -77,19 +81,20 @@ def project_flag(project: Project, today: date) -> Flag:
     return Flag.none
 
 
-def nearest_open_date(project: Project) -> date | None:
+def nearest_open_date(project: Project, with_payments: bool = True) -> date | None:
     dates = [s.due_date for s in project.stages if s.status != StageStatus.done and s.due_date]
-    dates += [p.due_date for p in project.payments if not p.is_paid and p.due_date]
+    if with_payments:
+        dates += [p.due_date for p in project.payments if not p.is_paid and p.due_date]
     if project.dispatch_date:
         dates.append(project.dispatch_date)
     return min(dates, default=None)
 
 
-def sort_key(project: Project, today: date) -> tuple:
-    nearest = nearest_open_date(project)
+def sort_key(project: Project, today: date, with_payments: bool = True) -> tuple:
+    nearest = nearest_open_date(project, with_payments)
     return (
         project.label == ProjectLabel.personal,
-        project_flag(project, today) != Flag.red,
+        project_flag(project, today, with_payments) != Flag.red,
         not project.is_p0,
         nearest is None,  # projects with no dates go last within their group
         nearest or date.max,

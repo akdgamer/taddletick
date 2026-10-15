@@ -5,10 +5,12 @@ import { ClientSelect } from './ClientSelect'
 interface Props {
   values: FieldValues
   onChange: (values: FieldValues) => void
+  /** Types this user may pick (e.g. a Viewer can only keep personal projects) */
+  labels?: ProjectLabel[]
 }
 
 /** The project fields shared by the new-project form and a tile's edit mode. */
-export function ProjectFieldsForm({ values, onChange }: Props) {
+export function ProjectFieldsForm({ values, onChange, labels = ['company', 'personal'] }: Props) {
   const set = <K extends keyof FieldValues>(key: K, value: FieldValues[K]) => onChange({ ...values, [key]: value })
 
   return (
@@ -32,9 +34,17 @@ export function ProjectFieldsForm({ values, onChange }: Props) {
         </label>
         <label>
           Type
-          <select value={values.label} onChange={(e) => set('label', e.target.value as ProjectLabel)}>
-            <option value="company">Company</option>
-            <option value="personal">Personal</option>
+          <select
+            value={values.label}
+            disabled={labels.length < 2}
+            onChange={(e) => set('label', e.target.value as ProjectLabel)}
+          >
+            {/* Always offer the current value, even when it can't be picked any more */}
+            {(labels.includes(values.label) ? labels : [values.label, ...labels]).map((l) => (
+              <option key={l} value={l}>
+                {l === 'company' ? 'Company' : 'Personal (only you see it)'}
+              </option>
+            ))}
           </select>
         </label>
         <label className="checkbox">

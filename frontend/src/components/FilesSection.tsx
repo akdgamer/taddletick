@@ -5,7 +5,14 @@ import { useDeleteFile, useUploadFile } from '../api/hooks'
 import type { ProjectFile } from '../api/types'
 import { formatSize } from '../format'
 
-export function FilesSection({ projectId, files }: { projectId: number; files: ProjectFile[] }) {
+interface Props {
+  projectId: number
+  files: ProjectFile[]
+  canUpload: boolean
+  canDelete: boolean
+}
+
+export function FilesSection({ projectId, files, canUpload, canDelete }: Props) {
   const uploadFile = useUploadFile()
   const deleteFile = useDeleteFile()
   const input = useRef<HTMLInputElement>(null)
@@ -32,17 +39,26 @@ export function FilesSection({ projectId, files }: { projectId: number; files: P
                 {f.filename}
               </a>
               <span className="muted">{formatSize(f.size)}</span>
-              <button className="icon-button" aria-label={`Delete ${f.filename}`} onClick={() => deleteFile.mutate(f.id)}>
-                ×
-              </button>
+              {canDelete && (
+                <button
+                  className="icon-button"
+                  aria-label={`Delete ${f.filename}`}
+                  onClick={() => deleteFile.mutate(f.id)}
+                >
+                  ×
+                </button>
+              )}
             </li>
           ))}
         </ul>
       )}
-      <label className="upload">
-        <input ref={input} type="file" multiple onChange={(e) => upload(e.target.files)} />
-        {uploadFile.isPending ? 'Uploading…' : '+ Upload files'}
-      </label>
+      {files.length === 0 && !canUpload && <p className="muted">No files.</p>}
+      {canUpload && (
+        <label className="upload">
+          <input ref={input} type="file" multiple onChange={(e) => upload(e.target.files)} />
+          {uploadFile.isPending ? 'Uploading…' : '+ Upload files'}
+        </label>
+      )}
       {error && <p className="error">{error.message}</p>}
     </details>
   )

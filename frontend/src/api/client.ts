@@ -5,6 +5,11 @@ import type {
   ContactFields,
   DashboardProject,
   GoogleStatus,
+  Role,
+  RoleFields,
+  User,
+  UserCreate,
+  UserUpdate,
   OutstandingPayment,
   Payment,
   PaymentFields,
@@ -44,6 +49,7 @@ async function check(response: Response): Promise<Response> {
 async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
   const response = await fetch(`${API_URL}${path}`, {
     method,
+    credentials: 'include', // send the login cookie (the dev API is on another port)
     headers: body === undefined ? undefined : { 'Content-Type': 'application/json' },
     body: body === undefined ? undefined : JSON.stringify(body),
   })
@@ -52,6 +58,23 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
 }
 
 export const api = {
+  setupNeeded: () => request<{ needed: boolean }>('GET', '/auth/setup'),
+  setup: (body: { username: string; display_name: string; password: string }) =>
+    request<User>('POST', '/auth/setup', body),
+  login: (username: string, password: string) => request<User>('POST', '/auth/login', { username, password }),
+  logout: () => request<void>('POST', '/auth/logout'),
+  me: () => request<User>('GET', '/auth/me'),
+  changePassword: (current_password: string, new_password: string) =>
+    request<void>('POST', '/auth/password', { current_password, new_password }),
+
+  users: () => request<User[]>('GET', '/users'),
+  createUser: (body: UserCreate) => request<User>('POST', '/users', body),
+  updateUser: (id: number, body: UserUpdate) => request<User>('PATCH', `/users/${id}`, body),
+  roles: () => request<Role[]>('GET', '/roles'),
+  createRole: (body: RoleFields) => request<Role>('POST', '/roles', body),
+  updateRole: (id: number, body: Partial<RoleFields>) => request<Role>('PATCH', `/roles/${id}`, body),
+  deleteRole: (id: number) => request<void>('DELETE', `/roles/${id}`),
+
   dashboard: () => request<DashboardProject[]>('GET', '/dashboard'),
 
   stageTypes: () => request<StageType[]>('GET', '/stage-types'),
@@ -90,7 +113,11 @@ export const api = {
   uploadFile: async (projectId: number, file: File) => {
     const form = new FormData()
     form.append('upload', file)
-    const response = await fetch(`${API_URL}/projects/${projectId}/files`, { method: 'POST', body: form })
+    const response = await fetch(`${API_URL}/projects/${projectId}/files`, {
+      method: 'POST',
+      credentials: 'include',
+      body: form,
+    })
     return (await check(response)).json() as Promise<ProjectFile>
   },
   fileUrl: (id: number) => `${API_URL}/files/${id}`,

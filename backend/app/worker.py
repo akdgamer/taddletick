@@ -17,12 +17,13 @@ def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
     log.info("Google sync worker started; every %ss", settings.sync_interval_seconds)
     while True:
-        try:
-            with SessionLocal() as session:
-                result = google_sync.sync_once(session)
-            log.info("sync: %s", result)
-        except Exception:
-            log.exception("sync failed; will retry next interval")
+        with SessionLocal() as session:
+            for user in google_sync.connected_users(session):
+                # One person's broken Google connection mustn't stop the others syncing
+                try:
+                    log.info("sync %s: %s", user.username, google_sync.sync_once(session, user))
+                except Exception:
+                    log.exception("sync for %s failed; will retry next interval", user.username)
         time.sleep(settings.sync_interval_seconds)
 
 

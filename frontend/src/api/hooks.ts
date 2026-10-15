@@ -2,6 +2,10 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 import { api } from './client'
 import type {
+  Permission,
+  RoleFields,
+  UserCreate,
+  UserUpdate,
   ClientFields,
   PaymentFields,
   TaskFields,
@@ -13,6 +17,10 @@ import type {
 } from './types'
 
 const keys = {
+  me: ['me'] as const,
+  setup: ['setup'] as const,
+  users: ['users'] as const,
+  roles: ['roles'] as const,
   dashboard: ['dashboard'] as const,
   projects: ['projects'] as const,
   stageTypes: ['stage-types'] as const,
@@ -23,10 +31,79 @@ const keys = {
   google: ['google'] as const,
 }
 
+// --- Login -------------------------------------------------------------------
+
+export const useSetupNeeded = () => useQuery({ queryKey: keys.setup, queryFn: api.setupNeeded })
+
+/** The logged-in user; errors with status 401 when nobody is logged in. */
+export const useMe = () =>
+  useQuery({
+    queryKey: keys.me,
+    queryFn: api.me,
+    retry: false,
+    staleTime: 5 * 60_000,
+  })
+
+/** Whether the logged-in user's role allows something (admins: everything). */
+export function useCan(permission: Permission | 'is_admin'): boolean {
+  const role = useMe().data?.role
+  return !!role && (role.is_admin || role[permission])
+}
+
+/** After logging in or out, every cached answer belonged to someone else: start over. */
+function useSessionChange<TArgs, TResult>(fn: (args: TArgs) => Promise<TResult>) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: fn,
+    onSuccess: () => queryClient.resetQueries(),
+  })
+}
+
+export const useLogin = () =>
+  useSessionChange(({ username, password }: { username: string; password: string }) => api.login(username, password))
+export const useLogout = () => useSessionChange(() => api.logout())
+export const useSetup = () => useSessionChange(api.setup)
+export const useChangePassword = () =>
+  useMutation({
+    mutationFn: ({ current, next }: { current: string; next: string }) => api.changePassword(current, next),
+  })
+
+// --- Users and roles (admin page) ----------------------------------------------
+
+export const useUsers = () => useQuery({ queryKey: keys.users, queryFn: api.users })
+export const useRoles = () => useQuery({ queryKey: keys.roles, queryFn: api.roles })
+
+function useAdminMutation<TArgs, TResult>(fn: (args: TArgs) => Promise<TResult>) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: fn,
+    // Role changes can change what the current user sees too
+    onSuccess: () =>
+      Promise.all(
+        [keys.users, keys.roles, keys.me, keys.dashboard, keys.projects, keys.payments].map((queryKey) =>
+          queryClient.invalidateQueries({ queryKey }),
+        ),
+      ),
+  })
+}
+
+export const useCreateUser = () => useAdminMutation((body: UserCreate) => api.createUser(body))
+export const useUpdateUser = () =>
+  useAdminMutation(({ id, body }: { id: number; body: UserUpdate }) => api.updateUser(id, body))
+export const useCreateRole = () => useAdminMutation((body: RoleFields) => api.createRole(body))
+export const useUpdateRole = () =>
+  useAdminMutation(({ id, body }: { id: number; body: Partial<RoleFields> }) => api.updateRole(id, body))
+export const useDeleteRole = () => useAdminMutation((id: number) => api.deleteRole(id))
+
+// --- Projects ------------------------------------------------------------------
+
 export const useDashboard = () => useQuery({ queryKey: keys.dashboard, queryFn: api.dashboard })
 
 export const useCompletedProjects = () =>
-  useQuery({ queryKey: [...keys.projects, { completed: true }], queryFn: () => api.projects(true) })
+  useQuery({
+    queryKey: [...keys.projects, { completed: true }],
+    queryFn: () => api.projects(true),
+  })
 
 export const useClients = () => useQuery({ queryKey: keys.clients, queryFn: api.clients })
 
@@ -139,7 +216,10 @@ export const useTodayTasks = () => useQuery({ queryKey: [...keys.tasks, 'today']
 
 function useTaskMutation<TArgs, TResult>(fn: (args: TArgs) => Promise<TResult>) {
   const queryClient = useQueryClient()
-  return useMutation({ mutationFn: fn, onSuccess: () => queryClient.invalidateQueries({ queryKey: keys.tasks }) })
+  return useMutation({
+    mutationFn: fn,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: keys.tasks }),
+  })
 }
 
 export const useCreateTask = () =>
@@ -156,7 +236,10 @@ export const useGoogleStatus = () => useQuery({ queryKey: keys.google, queryFn: 
 
 function useGoogleMutation<TResult>(fn: () => Promise<TResult>) {
   const queryClient = useQueryClient()
-  return useMutation({ mutationFn: fn, onSettled: () => queryClient.invalidateQueries({ queryKey: keys.google }) })
+  return useMutation({
+    mutationFn: fn,
+    onSettled: () => queryClient.invalidateQueries({ queryKey: keys.google }),
+  })
 }
 
 export const useGoogleSync = () => useGoogleMutation(api.googleSync)

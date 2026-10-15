@@ -18,6 +18,9 @@ uv run python -m app.worker                            # optional: Google sync l
 cd ../frontend && npm run dev                          # dashboard on http://localhost:5173
 ```
 
+The first visit shows a "Create the admin account" screen. That account takes over
+everything created before there were users; add other people under **Users**.
+
 Uploaded files go to `data/files/`. Google sync needs `secrets/google_client_secret.json`
 (see DEPLOY.md, step 7; use the `http://localhost:8000/google/callback` redirect URI).
 

@@ -4,6 +4,51 @@ export type ProjectLabel = 'company' | 'personal'
 export type StageStatus = 'not_started' | 'in_progress' | 'blocked' | 'done'
 export type Flag = 'red' | 'amber' | 'none'
 
+export type Permission = 'can_edit' | 'can_delete' | 'can_view_payments' | 'can_edit_payments'
+
+export interface RoleFields {
+  name: string
+  is_admin: boolean
+  can_edit: boolean
+  can_delete: boolean
+  can_view_payments: boolean
+  can_edit_payments: boolean
+}
+
+export interface Role extends RoleFields {
+  id: number
+}
+
+export interface UserRef {
+  id: number
+  display_name: string
+}
+
+export interface User {
+  id: number
+  username: string
+  display_name: string
+  role: Role
+  is_active: boolean
+}
+
+export interface UserCreate {
+  username: string
+  display_name: string
+  password: string
+  role_id: number
+}
+
+export type UserUpdate = Partial<
+  Pick<User, 'display_name' | 'is_active'> & {
+    role_id: number
+    password: string
+  }
+>
+
+/** What the logged-in user may do on one project (worked out by the API). */
+export type ProjectAccess = Record<Permission, boolean>
+
 export interface ClientRef {
   id: number
   name: string
@@ -132,6 +177,9 @@ export interface ProjectFields {
 export interface Project extends ProjectFields {
   id: number
   client: ClientRef | null
+  owner: UserRef | null
+  allowed_role_ids: number[] // empty = every role can see it
+  access: ProjectAccess
   is_completed: boolean
   stages: ProjectStage[]
   payments: Payment[]
@@ -140,9 +188,10 @@ export interface Project extends ProjectFields {
 
 export interface ProjectCreate extends ProjectFields {
   stage_type_ids: number[]
+  allowed_role_ids?: number[]
 }
 
-export type ProjectUpdate = Partial<ProjectFields & { is_completed: boolean }>
+export type ProjectUpdate = Partial<ProjectFields & { is_completed: boolean; allowed_role_ids: number[] }>
 
 export interface ProjectStageCreate {
   stage_type_id: number
@@ -160,6 +209,9 @@ export interface DashboardStage extends ProjectStage {
 export interface DashboardProject extends ProjectFields {
   id: number
   client: ClientRef | null
+  owner: UserRef | null
+  allowed_role_ids: number[]
+  access: ProjectAccess
   flag: Flag
   dispatch_flag: Flag
   days_to_dispatch: number | null

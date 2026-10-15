@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-import { useCreateTask, useOutstandingPayments, useSetTaskDone, useTodayTasks } from '../api/hooks'
+import { useCan, useCreateTask, useOutstandingPayments, useSetTaskDone, useTodayTasks } from '../api/hooks'
 import { formatDate, formatMoney } from '../format'
 
 /** Today's checklist: recurring tasks plus one-offs carried over until done. */
@@ -56,8 +56,12 @@ export function TodayPanel() {
 /** Overdue and soon-due payments across all projects, with who to call. */
 export function ChasePanel() {
   const { data: payments = [] } = useOutstandingPayments()
+  const canViewPayments = useCan('can_view_payments')
   const urgent = payments.filter((p) => p.flag !== 'none')
   const later = payments.length - urgent.length
+
+  // Without payment access, only their own personal projects' payments could show up here
+  if (!canViewPayments && payments.length === 0) return null
 
   return (
     <section className="panel" aria-label="Payments to chase">

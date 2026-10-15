@@ -7,10 +7,12 @@ from fastapi import APIRouter, Depends, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
+from app import auth
+from app.auth import current_user
 from app.config import settings
 from app.db import get_session
-from app.models import ProjectFile
-from app.routers.projects import get_project_or_404
+from app.models import ProjectFile, User
+from app.routers.projects import get_visible_project
 from app.schemas import FileRead
 
 router = APIRouter(tags=["files"])
@@ -29,8 +31,10 @@ def safe_name(filename: str) -> str:
 
 
 @router.post("/projects/{project_id}/files", response_model=FileRead, status_code=201)
-def upload_file(project_id: int, upload: UploadFile, session: Session = Depends(get_session)):
-    get_project_or_404(session, project_id)
+def upload_file(
+    project_id: int, upload: UploadFile, session: Session = Depends(get_session), user: User = Depends(current_user)
+):
+    auth.check(auth.can_edit(user, get_visible_project(session, project_id, user)))
     folder = project_dir(project_id)
     folder.mkdir(parents=True, exist_ok=True)
 
@@ -61,16 +65,16 @@ def upload_file(project_id: int, upload: UploadFile, session: Session = Depends(
     return record
 
 
-def get_file_or_404(session: Session, file_id: int) -> ProjectFile:
+def get_file_or_404(session: Session, file_id: int, user: User) -> ProjectFile:
     record = session.get(ProjectFile, file_id)
-    if record is None:
+    if record is None or not auth.can_see(user, record.project):
         raise HTTPException(404, "File not found")
     return record
 
 
 @router.get("/files/{file_id}")
-def download_file(file_id: int, session: Session = Depends(get_session)):
-    record = get_file_or_404(session, file_id)
+def download_file(file_id: int, session: Session = Depends(get_session), user: User = Depends(current_user)):
+    record = get_file_or_404(session, file_id, user)
     path = project_dir(record.project_id) / record.stored_name
     if not path.exists():
         raise HTTPException(410, "The file record exists but the file is missing from storage")
@@ -79,8 +83,9 @@ def download_file(file_id: int, session: Session = Depends(get_session)):
 
 
 @router.delete("/files/{file_id}", status_code=204)
-def delete_file(file_id: int, session: Session = Depends(get_session)):
-    record = get_file_or_404(session, file_id)
+def delete_file(file_id: int, session: Session = Depends(get_session), user: User = Depends(current_user)):
+    record = get_file_or_404(session, file_id, user)
+    auth.check(auth.can_delete(user, record.project))
     (project_dir(record.project_id) / record.stored_name).unlink(missing_ok=True)
     session.delete(record)
     session.commit()

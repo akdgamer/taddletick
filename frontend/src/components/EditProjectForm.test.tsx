@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 
 import type { DashboardProject } from '../api/types'
-import { mockFetch, renderWithQuery } from '../test/render'
+import { mockFetch, renderWithQuery, FULL_ACCESS } from '../test/render'
 import { CompletedList } from './CompletedList'
 import { ProjectTile } from './ProjectTile'
 
@@ -22,6 +22,9 @@ const project: DashboardProject = {
   days_to_dispatch: 30,
   stages: [],
   payments: [],
+  owner: { id: 1, display_name: 'Boss' },
+  allowed_role_ids: [],
+  access: FULL_ACCESS,
   files: [],
 }
 
@@ -71,7 +74,10 @@ describe('CompletedList', () => {
     const fetchMock = mockFetch()
     fetchMock.mockImplementation(async (input, init) => {
       const body = String(input).includes('completed=true') && init?.method === 'GET' ? [{ ...project, is_completed: true }] : {}
-      return new Response(JSON.stringify(body), { status: 200, headers: { 'Content-Type': 'application/json' } })
+      return new Response(JSON.stringify(body), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      })
     })
     const user = userEvent.setup()
     renderWithQuery(<CompletedList />)

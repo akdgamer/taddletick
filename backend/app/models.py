@@ -44,6 +44,62 @@ project_stage_contacts = Table(
 )
 
 
+# Restricted company projects: only these roles (plus admins) may see them.
+# No rows for a project = every role can see it.
+project_roles = Table(
+    "project_roles",
+    Base.metadata,
+    Column("project_id", ForeignKey("projects.id", ondelete="CASCADE"), primary_key=True),
+    Column("role_id", ForeignKey("roles.id", ondelete="CASCADE"), primary_key=True, index=True),
+)
+
+
+class Role(Base):
+    """A set of permissions. Admin roles can do everything, including managing users."""
+
+    __tablename__ = "roles"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String(100), unique=True)
+    is_admin: Mapped[bool] = mapped_column(Boolean, default=False)
+    can_edit: Mapped[bool] = mapped_column(Boolean, default=False)  # company projects, clients, contacts
+    can_delete: Mapped[bool] = mapped_column(Boolean, default=False)
+    can_view_payments: Mapped[bool] = mapped_column(Boolean, default=False)
+    can_edit_payments: Mapped[bool] = mapped_column(Boolean, default=False)
+
+
+class User(Base):
+    __tablename__ = "users"
+    __table_args__ = (Index("uq_users_username_lower", text("lower(username)"), unique=True),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    username: Mapped[str] = mapped_column(String(100))
+    display_name: Mapped[str] = mapped_column(String(200))
+    password_hash: Mapped[str] = mapped_column(String(300))
+    role_id: Mapped[int] = mapped_column(ForeignKey("roles.id", ondelete="RESTRICT"), index=True)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    role: Mapped[Role] = relationship(lazy="joined")
+
+    def allowed(self, permission: str) -> bool:
+        """permission is a Role flag, e.g. "can_edit"; admins have them all."""
+        return self.role.is_admin or getattr(self.role, permission)
+
+
+class UserSession(Base):
+    """A logged-in browser. The cookie holds a random token; only its hash is stored."""
+
+    __tablename__ = "user_sessions"
+
+    token_hash: Mapped[str] = mapped_column(String(64), primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+    user: Mapped[User] = relationship(lazy="joined")
+
+
 class Client(Base):
     """A customer company. Has many contacts and many projects."""
 
@@ -104,6 +160,8 @@ class Project(Base):
     dispatch_date: Mapped[date | None] = mapped_column(Date)
     notes: Mapped[str] = mapped_column(Text, default="")
     is_completed: Mapped[bool] = mapped_column(Boolean, default=False)
+    # Who created it; personal projects are visible to this user only
+    owner_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), index=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
@@ -112,6 +170,8 @@ class Project(Base):
     )
 
     client: Mapped[Client | None] = relationship(lazy="joined")
+    owner: Mapped[User | None] = relationship(lazy="joined")
+    allowed_roles: Mapped[list[Role]] = relationship(secondary=project_roles, lazy="selectin", order_by=Role.name)
     stages: Mapped[list["ProjectStage"]] = relationship(
         back_populates="project",
         cascade="all, delete-orphan",
@@ -129,6 +189,10 @@ class Project(Base):
         lazy="selectin",
         order_by="ProjectFile.uploaded_at.desc()",
     )
+
+    @property
+    def allowed_role_ids(self) -> list[int]:
+        return [r.id for r in self.allowed_roles]
 
 
 class ProjectStage(Base):
@@ -210,6 +274,8 @@ class Task(Base):
     __tablename__ = "tasks"
 
     id: Mapped[int] = mapped_column(primary_key=True)
+    # Each person has their own task list (nullable only until the first admin claims old data)
+    user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
     title: Mapped[str] = mapped_column(String(300))
     notes: Mapped[str] = mapped_column(Text, default="")
     project_id: Mapped[int | None] = mapped_column(ForeignKey("projects.id", ondelete="SET NULL"), index=True)
@@ -233,11 +299,12 @@ class TaskCompletion(Base):
 
 
 class GoogleAccount(Base):
-    """Single row (id=1): the connected Google account and the calendar/task list we own."""
+    """One per user: their connected Google account and the calendar/task list we own there."""
 
     __tablename__ = "google_account"
 
     id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), unique=True)
     token_json: Mapped[str | None] = mapped_column(Text)
     oauth_state: Mapped[str | None] = mapped_column(String(200))
     oauth_code_verifier: Mapped[str | None] = mapped_column(String(200))
@@ -251,7 +318,10 @@ class SyncedItem(Base):
     """Remembers which Google event/task mirrors which local item, so sync can update or delete it."""
 
     __tablename__ = "synced_items"
+    __table_args__ = (UniqueConstraint("user_id", "key"),)
 
-    key: Mapped[str] = mapped_column(String(100), primary_key=True)  # e.g. "calendar:stage:12"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    key: Mapped[str] = mapped_column(String(100))  # e.g. "calendar:stage:12"
     google_id: Mapped[str] = mapped_column(String(300))
     fingerprint: Mapped[str] = mapped_column(String(64))  # hash of what we last sent

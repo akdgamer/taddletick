@@ -13,7 +13,11 @@
   --on-accent: #ffffff;
 
   color-scheme: light;
-  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-family:
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    sans-serif;
   font-size: 15px;
   line-height: 1.4;
   color: var(--text);
@@ -236,7 +240,9 @@ textarea {
 
 .stage {
   display: grid;
-  grid-template-columns: 8px minmax(110px, 1fr) auto auto minmax(80px, 1.2fr) auto;
+  grid-template-columns:
+    8px minmax(110px, 1fr) auto auto minmax(80px, 1.2fr)
+    auto;
   align-items: center;
   gap: 8px;
   padding: 4px 6px;
@@ -461,10 +467,74 @@ textarea {
   padding: 6px 10px;
 }
 
-.app-nav .theme-toggle {
+.nav-end {
   margin-left: auto;
-  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 4px;
   white-space: nowrap;
+}
+
+.app-nav .nav-end button {
+  font-size: 0.85rem;
+}
+
+.nav-user {
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 0 6px;
+}
+
+/* Login and first-run screens */
+
+.auth-page {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+}
+
+.auth-page form {
+  width: min(100%, 380px);
+}
+
+.auth-page h1 {
+  font-size: 1.3rem;
+}
+
+.auth-logo {
+  width: 56px;
+  height: 56px;
+}
+
+/* Users page */
+
+.role-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.role-table th,
+.role-table td {
+  padding: 6px 8px;
+  border-top: 1px solid var(--border);
+  text-align: center;
+}
+
+.role-table th:first-child,
+.role-table td:first-child {
+  text-align: left;
+}
+
+.table-scroll {
+  overflow-x: auto;
+}
+
+.role-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
 }
 
 .app-nav button[aria-current='page'] {

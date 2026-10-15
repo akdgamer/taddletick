@@ -12,6 +12,77 @@ class ORMModel(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+# Users and roles
+
+class RoleFields(BaseModel):
+    is_admin: bool = False
+    can_edit: bool = False
+    can_delete: bool = False
+    can_view_payments: bool = False
+    can_edit_payments: bool = False
+
+
+class RoleCreate(RoleFields):
+    name: str = Field(min_length=1, max_length=100)
+
+
+class RoleUpdate(BaseModel):
+    name: str | None = Field(default=None, min_length=1, max_length=100)
+    is_admin: bool | None = None
+    can_edit: bool | None = None
+    can_delete: bool | None = None
+    can_view_payments: bool | None = None
+    can_edit_payments: bool | None = None
+
+
+class RoleRead(RoleFields, ORMModel):
+    id: int
+    name: str
+
+
+class UserRef(ORMModel):
+    id: int
+    display_name: str
+
+
+class UserRead(ORMModel):
+    id: int
+    username: str
+    display_name: str
+    role: RoleRead
+    is_active: bool
+
+
+class UserCreate(BaseModel):
+    username: str = Field(min_length=2, max_length=100, pattern=r"^[A-Za-z0-9_.-]+$")
+    display_name: str = Field(min_length=1, max_length=200)
+    password: str = Field(min_length=8, max_length=200)
+    role_id: int
+
+
+class UserUpdate(BaseModel):
+    display_name: str | None = Field(default=None, min_length=1, max_length=200)
+    role_id: int | None = None
+    is_active: bool | None = None
+    password: str | None = Field(default=None, min_length=8, max_length=200)  # admin reset
+
+
+class SetupBody(BaseModel):
+    username: str = Field(min_length=2, max_length=100, pattern=r"^[A-Za-z0-9_.-]+$")
+    display_name: str = Field(min_length=1, max_length=200)
+    password: str = Field(min_length=8, max_length=200)
+
+
+class LoginBody(BaseModel):
+    username: str
+    password: str
+
+
+class PasswordChange(BaseModel):
+    current_password: str
+    new_password: str = Field(min_length=8, max_length=200)
+
+
 # Clients and contacts
 
 class ClientRef(ORMModel):
@@ -163,6 +234,8 @@ class ProjectBase(BaseModel):
 class ProjectCreate(ProjectBase):
     # Stages picked from the catalog, in the order given
     stage_type_ids: list[int] = []
+    # Restrict a company project to these roles (admins only); empty = everyone
+    allowed_role_ids: list[int] = []
 
 
 class ProjectUpdate(BaseModel):
@@ -174,15 +247,33 @@ class ProjectUpdate(BaseModel):
     dispatch_date: date | None = None
     notes: str | None = None
     is_completed: bool | None = None
+    allowed_role_ids: list[int] | None = None
 
 
-class ProjectRead(ProjectBase, ORMModel):
+class ProjectAccess(BaseModel):
+    """What the current user may do on this project (drives which buttons show)."""
+
+    can_edit: bool
+    can_delete: bool
+    can_view_payments: bool
+    can_edit_payments: bool
+
+
+class ProjectFields(ProjectBase, ORMModel):
+    """The parts of a project that read straight from the database row."""
+
     id: int
     client: ClientRef | None
+    owner: UserRef | None
+    allowed_role_ids: list[int]
     is_completed: bool
     stages: list[ProjectStageRead]
-    payments: list[PaymentRead]
     files: list[FileRead]
+
+
+class ProjectRead(ProjectFields):
+    payments: list[PaymentRead]  # empty when the user may not see payments
+    access: ProjectAccess
 
 
 # Dashboard (computed view)
@@ -198,6 +289,9 @@ class DashboardPayment(PaymentRead):
 class DashboardProject(ProjectBase):
     id: int
     client: ClientRef | None
+    owner: UserRef | None
+    allowed_role_ids: list[int]
+    access: ProjectAccess
     flag: Flag
     dispatch_flag: Flag
     days_to_dispatch: int | None

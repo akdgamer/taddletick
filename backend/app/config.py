@@ -22,6 +22,10 @@ class Settings(BaseSettings):
     google_client_secrets: Path = Path(__file__).resolve().parents[2] / "secrets" / "google_client_secret.json"
     google_redirect_uri: str = "http://localhost:8000/google/callback"
 
+    # Login cookie: Secure (HTTPS only) in production behind Tailscale; off for http://localhost
+    cookie_secure: bool = False
+    session_days: int = 60
+
     # How often the worker pushes changes to Google
     sync_interval_seconds: int = 300
 

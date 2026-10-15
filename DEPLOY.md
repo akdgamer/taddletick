@@ -92,6 +92,11 @@ tailscale serve status
 Now open `https://taddletick-pi.<your-tailnet>.ts.net` from any device logged in to
 your Tailscale account.
 
+The first visit asks you to **create the admin account**. If you're moving data
+from the laptop (step 8) and already have an account there, it comes along and
+you just log in. Add the other people under **Users**: each gets a username and
+a first password from you, and can change it under **Settings**.
+
 **iPhone**: install the Tailscale app, sign in with the same account and switch it
 on. Open the address in Safari → Share → **Add to Home Screen**. It opens like an app.
 
@@ -111,7 +116,8 @@ on. Open the address in Safari → Share → **Add to Home Screen**. It opens li
 5. Download the JSON and copy it to the Pi as `taddletick/secrets/google_client_secret.json`.
 6. Make sure `GOOGLE_REDIRECT_URI` in `.env` is exactly the Pi URI above, then
    `docker compose -f docker-compose.prod.yml up -d`.
-7. In the app: **Settings → Connect Google account**. Google will warn that the app
+7. In the app: **Settings → Connect Google account**. Each person connects their
+   own Google account this way; they only get the projects they can see. Google will warn that the app
    isn't verified; that's expected for a personal app: **Advanced → Go to Taddletick**.
 
 The app creates a calendar and a task list named **Taddletick** and only ever

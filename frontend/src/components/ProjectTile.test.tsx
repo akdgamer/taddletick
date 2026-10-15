@@ -2,7 +2,7 @@ import { screen, within } from '@testing-library/react'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 import type { DashboardProject } from '../api/types'
-import { mockFetch, renderWithQuery } from '../test/render'
+import { mockFetch, renderWithQuery, FULL_ACCESS } from '../test/render'
 import { ProjectTile } from './ProjectTile'
 
 const project: DashboardProject = {
@@ -23,6 +23,9 @@ const project: DashboardProject = {
     { id: 2, stage_type_id: 1, name: 'PO received', status: 'done', due_date: null, notes: '', position: 0, flag: 'none', contacts: [] },
   ],
   payments: [],
+  owner: { id: 1, display_name: 'Boss' },
+  allowed_role_ids: [],
+  access: FULL_ACCESS,
   files: [],
 }
 
@@ -55,5 +58,14 @@ describe('ProjectTile', () => {
     const addStage = await screen.findByRole('combobox', { name: 'Add stage' })
     const options = within(addStage).getAllByRole('option').map((o) => o.textContent)
     expect(options).toEqual(['+ Add stage…', 'Electrical design'])
+  })
+
+  it('hides changes the role may not make', () => {
+    const readOnly = { can_edit: false, can_delete: false, can_view_payments: false, can_edit_payments: false }
+    renderWithQuery(<ProjectTile project={{ ...project, access: readOnly }} />)
+    expect(screen.queryByRole('button', { name: 'Edit' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Delete' })).not.toBeInTheDocument()
+    expect(screen.queryByText('Payments')).not.toBeInTheDocument()
+    expect(screen.getByRole('combobox', { name: 'Ordering parts status' })).toBeDisabled()
   })
 })

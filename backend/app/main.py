@@ -1,9 +1,11 @@
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
+from app.auth import current_user
 from app.config import settings
 from app.routers import (
+    auth,
     clients,
     contacts,
     dashboard,
@@ -14,6 +16,7 @@ from app.routers import (
     stage_types,
     stages,
     tasks,
+    users,
 )
 
 app = FastAPI(title="Taddletick")
@@ -22,12 +25,16 @@ app = FastAPI(title="Taddletick")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins,
+    allow_credentials=True,  # send the login cookie
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-for module in (dashboard, projects, stages, stage_types, clients, contacts, payments, files, tasks, google):
-    app.include_router(module.router)
+# Login, setup and Google's redirect are open; everything else needs a logged-in user
+app.include_router(auth.router)
+app.include_router(google.callback_router)
+for module in (dashboard, projects, stages, stage_types, clients, contacts, payments, files, tasks, google, users):
+    app.include_router(module.router, dependencies=[Depends(current_user)])
 
 
 @app.get("/health")

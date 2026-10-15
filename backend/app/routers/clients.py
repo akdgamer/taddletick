@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from app.auth import require
 from app.db import get_session
 from app.models import Client, Contact, Project
 from app.schemas import ClientCreate, ClientRead, ClientUpdate
@@ -40,7 +41,7 @@ def get_client(client_id: int, session: Session = Depends(get_session)):
     return get_client_or_404(session, client_id)
 
 
-@router.post("", response_model=ClientRead, status_code=201)
+@router.post("", response_model=ClientRead, status_code=201, dependencies=[Depends(require("can_edit"))])
 def create_client(body: ClientCreate, session: Session = Depends(get_session)):
     name = body.name.strip()
     check_name_free(session, name)
@@ -51,7 +52,7 @@ def create_client(body: ClientCreate, session: Session = Depends(get_session)):
     return client
 
 
-@router.patch("/{client_id}", response_model=ClientRead)
+@router.patch("/{client_id}", response_model=ClientRead, dependencies=[Depends(require("can_edit"))])
 def update_client(client_id: int, body: ClientUpdate, session: Session = Depends(get_session)):
     client = get_client_or_404(session, client_id)
     changes = body.model_dump(exclude_unset=True)
@@ -65,7 +66,7 @@ def update_client(client_id: int, body: ClientUpdate, session: Session = Depends
     return client
 
 
-@router.delete("/{client_id}", status_code=204)
+@router.delete("/{client_id}", status_code=204, dependencies=[Depends(require("can_delete"))])
 def delete_client(client_id: int, session: Session = Depends(get_session)):
     client = get_client_or_404(session, client_id)
     # Refuse rather than silently unlinking projects or deleting people

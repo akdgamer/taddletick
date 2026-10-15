@@ -4,7 +4,14 @@ import { useAddStakeholder, useContacts, useRemoveStakeholder } from '../api/hoo
 import type { Contact } from '../api/types'
 
 /** The people involved in one project stage, with a picker to add more. */
-export function Stakeholders({ stageId, stageName, contacts }: { stageId: number; stageName: string; contacts: Contact[] }) {
+interface Props {
+  stageId: number
+  stageName: string
+  contacts: Contact[]
+  readOnly?: boolean
+}
+
+export function Stakeholders({ stageId, stageName, contacts, readOnly = false }: Props) {
   const { data: allContacts = [] } = useContacts()
   const addStakeholder = useAddStakeholder()
   const removeStakeholder = useRemoveStakeholder()
@@ -27,17 +34,19 @@ export function Stakeholders({ stageId, stageName, contacts }: { stageId: number
             {c.name}
             {c.client && <span className="muted"> · {c.client.name}</span>}
           </button>
-          <button
-            className="icon-button"
-            aria-label={`Remove ${c.name} from ${stageName}`}
-            onClick={() => removeStakeholder.mutate({ stageId, contactId: c.id })}
-          >
-            ×
-          </button>
+          {!readOnly && (
+            <button
+              className="icon-button"
+              aria-label={`Remove ${c.name} from ${stageName}`}
+              onClick={() => removeStakeholder.mutate({ stageId, contactId: c.id })}
+            >
+              ×
+            </button>
+          )}
         </span>
       ))}
 
-      {available.length > 0 && (
+      {!readOnly && available.length > 0 && (
         <select
           className="add-person"
           aria-label={`Add person to ${stageName}`}

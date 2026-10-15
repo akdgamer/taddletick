@@ -28,6 +28,8 @@ services:
       DATABASE_URL: postgresql+psycopg://tracker:${DB_PASSWORD}@db:5432/tracker
       GOOGLE_REDIRECT_URI: ${GOOGLE_REDIRECT_URI:-http://localhost:8000/google/callback}
       SYNC_INTERVAL_SECONDS: ${SYNC_INTERVAL_SECONDS:-300}
+      # Login cookie only over HTTPS (Tailscale serve). Set false only if you use plain http://
+      COOKIE_SECURE: ${COOKIE_SECURE:-true}
     ports:
       # Only reachable from the Pi itself; Tailscale Serve publishes it to your devices
       - "127.0.0.1:${APP_PORT:-8000}:8000"

@@ -41,19 +41,22 @@ function CompletedRow({ project }: { project: Project }) {
         {error && <p className="error">{error.message}</p>}
       </div>
       <div className="row-actions">
-        <button onClick={() => updateProject.mutate({ id: project.id, body: { is_completed: false } })}>
-          Restore
-        </button>
-        {confirmingDelete ? (
-          <>
-            <button className="danger" onClick={() => deleteProject.mutate(project.id)}>
-              Confirm delete
-            </button>
-            <button onClick={() => setConfirmingDelete(false)}>Cancel</button>
-          </>
-        ) : (
-          <button onClick={() => setConfirmingDelete(true)}>Delete</button>
+        {project.access.can_edit && (
+          <button onClick={() => updateProject.mutate({ id: project.id, body: { is_completed: false } })}>
+            Restore
+          </button>
         )}
+        {project.access.can_delete &&
+          (confirmingDelete ? (
+            <>
+              <button className="danger" onClick={() => deleteProject.mutate(project.id)}>
+                Confirm delete
+              </button>
+              <button onClick={() => setConfirmingDelete(false)}>Cancel</button>
+            </>
+          ) : (
+            <button onClick={() => setConfirmingDelete(true)}>Delete</button>
+          ))}
       </div>
     </li>
   )
