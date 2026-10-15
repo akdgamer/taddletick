@@ -10,12 +10,52 @@
   --amber: #b86e00;
   --amber-bg: #fff4e0;
   --done: #9a9a94;
+  --on-accent: #ffffff;
 
+  color-scheme: light;
   font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
   font-size: 15px;
   line-height: 1.4;
   color: var(--text);
   background: var(--bg);
+}
+
+/* Dark theme: follows the system unless the nav toggle picked one (data-theme on <html>) */
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --bg: #161615;
+    --surface: #20201e;
+    --text: #ecece8;
+    --muted: #9d9d97;
+    --border: #383835;
+    --accent: #6f9bf0;
+    --red: #f07070;
+    --red-bg: #3a1f1f;
+    --amber: #e6a540;
+    --amber-bg: #3a2e18;
+    --done: #74746f;
+    --on-accent: #10131a;
+
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme='dark'] {
+  --bg: #161615;
+  --surface: #20201e;
+  --text: #ecece8;
+  --muted: #9d9d97;
+  --border: #383835;
+  --accent: #6f9bf0;
+  --red: #f07070;
+  --red-bg: #3a1f1f;
+  --amber: #e6a540;
+  --amber-bg: #3a2e18;
+  --done: #74746f;
+  --on-accent: #10131a;
+
+  color-scheme: dark;
 }
 
 * {
@@ -55,13 +95,13 @@ button:hover {
 button.primary {
   background: var(--accent);
   border-color: var(--accent);
-  color: white;
+  color: var(--on-accent);
 }
 
 button.danger {
   background: var(--red);
   border-color: var(--red);
-  color: white;
+  color: var(--on-accent);
 }
 
 button:disabled {
@@ -162,7 +202,7 @@ textarea {
 
 .badge-p0 {
   background: var(--red);
-  color: white;
+  color: var(--on-accent);
 }
 
 .tile-meta,
@@ -411,6 +451,12 @@ textarea {
   background: none;
   color: var(--muted);
   padding: 6px 10px;
+}
+
+.app-nav .theme-toggle {
+  margin-left: auto;
+  font-size: 0.85rem;
+  white-space: nowrap;
 }
 
 .app-nav button[aria-current='page'] {
@@ -718,7 +764,7 @@ a.button {
 a.button.primary {
   background: var(--accent);
   border-color: var(--accent);
-  color: white;
+  color: var(--on-accent);
 }
 
 /* Phone layout */

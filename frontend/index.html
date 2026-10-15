@@ -10,6 +10,13 @@
     <meta name="apple-mobile-web-app-title" content="Taddletick" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <title>Taddletick</title>
+    <script>
+      // Apply a theme picked with the nav toggle before first paint (no flash of the wrong theme)
+      try {
+        const t = localStorage.getItem('theme')
+        if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t)
+      } catch {}
+    </script>
   </head>
   <body>
     <div id="root"></div>

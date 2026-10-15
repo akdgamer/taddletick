@@ -5,6 +5,7 @@ import { ContactsPage } from './components/ContactsPage'
 import { DashboardPage } from './components/DashboardPage'
 import { SettingsPage } from './components/SettingsPage'
 import { TasksPage } from './components/TasksPage'
+import { ThemeToggle } from './components/ThemeToggle'
 
 const queryClient = new QueryClient({
   // Refetch when you come back to the tab/app, e.g. on the phone after a while
@@ -32,6 +33,7 @@ export default function App() {
             {PAGES[p]}
           </button>
         ))}
+        <ThemeToggle />
       </nav>
       {page === 'projects' && <DashboardPage />}
       {page === 'tasks' && <TasksPage />}
