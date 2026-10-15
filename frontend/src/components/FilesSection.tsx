@@ -4,6 +4,7 @@ import { api } from '../api/client'
 import { useDeleteFile, useUploadFile } from '../api/hooks'
 import type { ProjectFile } from '../api/types'
 import { formatSize } from '../format'
+import { IconButton, TrashIcon } from './Icons'
 
 interface Props {
   projectId: number
@@ -40,13 +41,12 @@ export function FilesSection({ projectId, files, canUpload, canDelete }: Props) 
               </a>
               <span className="muted">{formatSize(f.size)}</span>
               {canDelete && (
-                <button
-                  className="icon-button"
-                  aria-label={`Delete ${f.filename}`}
+                <IconButton
+                  label={`Delete ${f.filename}`}
+                  tone="danger"
+                  icon={<TrashIcon />}
                   onClick={() => deleteFile.mutate(f.id)}
-                >
-                  ×
-                </button>
+                />
               )}
             </li>
           ))}

@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useDeleteStage, useUpdateStage } from '../api/hooks'
 import type { DashboardStage, StageStatus } from '../api/types'
 import { dueText, STATUS_LABELS } from '../format'
+import { IconButton, TrashIcon } from './Icons'
 import { ChevronIcon } from './Menu'
 import { Stakeholders } from './Stakeholders'
 
@@ -92,9 +93,12 @@ export function StageRow({ stage, canEdit, canDelete }: Props) {
           </div>
           {canDelete && (
             <div className="stage-details-actions">
-              <button className="text-button danger-text" onClick={() => deleteStage.mutate(stage.id)}>
-                Remove stage
-              </button>
+              <IconButton
+                label="Remove stage"
+                tone="danger"
+                icon={<TrashIcon />}
+                onClick={() => deleteStage.mutate(stage.id)}
+              />
             </div>
           )}
         </div>

@@ -3,6 +3,7 @@ import { useState, type FormEvent } from 'react'
 import { useAddPayment, useDeletePayment, useUpdatePayment } from '../api/hooks'
 import type { DashboardPayment, PaymentFields } from '../api/types'
 import { formatDate, formatMoney, todayIso } from '../format'
+import { CheckIcon, EditIcon, IconButton, TrashIcon } from './Icons'
 
 const EMPTY: PaymentFields = {
   label: '',
@@ -87,7 +88,10 @@ function PaymentRow({ payment, canEdit, canDelete }: { payment: DashboardPayment
       <span className="payment-status">{status}</span>
       <span className="row-actions">
         {canEdit && !payment.is_paid && (
-          <button
+          <IconButton
+            label="Mark received"
+            tone="ok"
+            icon={<CheckIcon />}
             onClick={() =>
               updatePayment.mutate({
                 id: payment.id,
@@ -97,23 +101,18 @@ function PaymentRow({ payment, canEdit, canDelete }: { payment: DashboardPayment
                 },
               })
             }
-          >
-            Mark received
-          </button>
+          />
         )}
         {canEdit && (
-          <button className="link-button" onClick={() => setEditing(true)}>
-            Edit
-          </button>
+          <IconButton label="Edit payment" tone="accent" icon={<EditIcon />} onClick={() => setEditing(true)} />
         )}
         {canDelete && (
-          <button
-            className="icon-button"
-            aria-label={`Delete payment ${payment.label}`}
+          <IconButton
+            label={`Delete payment ${payment.label}`}
+            tone="danger"
+            icon={<TrashIcon />}
             onClick={() => deletePayment.mutate(payment.id)}
-          >
-            ×
-          </button>
+          />
         )}
       </span>
       {payment.notes && <span className="payment-notes muted">{payment.notes}</span>}

@@ -3,6 +3,7 @@ import { useState, type FormEvent } from 'react'
 import { useCreateTask, useDashboard, useDeleteTask, useTasks, useUpdateTask } from '../api/hooks'
 import type { Recurrence, Task, TaskFields } from '../api/types'
 import { formatDate, todayIso } from '../format'
+import { ArchiveIcon, EditIcon, IconButton, TrashIcon } from './Icons'
 
 const RECURRENCE_LABELS: Record<Recurrence, string> = {
   daily: 'Every day',
@@ -78,11 +79,14 @@ function TaskItem({ task }: { task: Task }) {
         {task.notes && <div className="muted">{task.notes}</div>}
       </div>
       <div className="row-actions">
-        <button className="link-button" onClick={() => setEditing(true)}>
-          Edit
-        </button>
-        <button onClick={() => updateTask.mutate({ id: task.id, body: { is_archived: true } })}>Archive</button>
-        <button onClick={() => deleteTask.mutate(task.id)}>Delete</button>
+        <IconButton label="Edit task" tone="accent" icon={<EditIcon />} onClick={() => setEditing(true)} />
+        <IconButton
+          label="Archive task"
+          tone="warn"
+          icon={<ArchiveIcon />}
+          onClick={() => updateTask.mutate({ id: task.id, body: { is_archived: true } })}
+        />
+        <IconButton label="Delete task" tone="danger" icon={<TrashIcon />} onClick={() => deleteTask.mutate(task.id)} />
       </div>
     </li>
   )

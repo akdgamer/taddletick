@@ -11,6 +11,7 @@ import {
   useUsers,
 } from '../api/hooks'
 import type { Role, RoleFields, User } from '../api/types'
+import { IconButton, KeyIcon, TrashIcon, UserOffIcon, UserOnIcon } from './Icons'
 
 const FLAGS: {
   key: keyof Omit<RoleFields, 'name'>
@@ -221,12 +222,20 @@ function UserRow({ user }: { user: User }) {
             </option>
           ))}
         </select>
-        {!resetting && <button onClick={() => setResetting(true)}>Reset password</button>}
-        {!isMe && (
-          <button onClick={() => update({ is_active: !user.is_active })}>
-            {user.is_active ? 'Deactivate' : 'Reactivate'}
-          </button>
+        {!resetting && (
+          <IconButton label="Reset password" tone="accent" icon={<KeyIcon />} onClick={() => setResetting(true)} />
         )}
+        {!isMe &&
+          (user.is_active ? (
+            <IconButton
+              label="Deactivate"
+              tone="danger"
+              icon={<UserOffIcon />}
+              onClick={() => update({ is_active: false })}
+            />
+          ) : (
+            <IconButton label="Reactivate" tone="ok" icon={<UserOnIcon />} onClick={() => update({ is_active: true })} />
+          ))}
       </div>
     </li>
   )
@@ -330,13 +339,12 @@ function RoleRow({ role }: { role: Role }) {
           </td>
         ))}
         <td>
-          <button
-            className="icon-button"
-            aria-label={`Delete role ${role.name}`}
+          <IconButton
+            label={`Delete role ${role.name}`}
+            tone="danger"
+            icon={<TrashIcon />}
             onClick={() => deleteRole.mutate(role.id)}
-          >
-            ×
-          </button>
+          />
         </td>
       </tr>
       {error && (

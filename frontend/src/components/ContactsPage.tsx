@@ -12,6 +12,7 @@ import {
   useUpdateContact,
 } from '../api/hooks'
 import type { Client, ClientFields, Contact, ContactFields } from '../api/types'
+import { EditIcon, IconButton, TrashIcon } from './Icons'
 import { ContactCard } from './Stakeholders'
 
 const EMPTY_CLIENT: ClientFields = { name: '', address: '', notes: '' }
@@ -127,9 +128,7 @@ function ClientSection({ client }: { client: Client }) {
           </div>
           <div className="row-actions">
             {canEdit && (
-              <button className="link-button" onClick={() => setEditing(true)}>
-                Edit
-              </button>
+              <IconButton label="Edit client" tone="accent" icon={<EditIcon />} onClick={() => setEditing(true)} />
             )}
             {canDelete &&
               (confirmingDelete ? (
@@ -140,7 +139,7 @@ function ClientSection({ client }: { client: Client }) {
                   <button onClick={() => setConfirmingDelete(false)}>Cancel</button>
                 </>
               ) : (
-                <button onClick={() => setConfirmingDelete(true)}>Delete</button>
+                <IconButton label="Delete client" tone="danger" icon={<TrashIcon />} onClick={() => setConfirmingDelete(true)} />
               ))}
           </div>
         </header>
@@ -193,9 +192,7 @@ function ContactItem({ contact }: { contact: Contact }) {
       <ContactCard contact={contact} />
       <div className="row-actions">
         {canEdit && (
-          <button className="link-button" onClick={() => setEditing(true)}>
-            Edit
-          </button>
+          <IconButton label="Edit contact" tone="accent" icon={<EditIcon />} onClick={() => setEditing(true)} />
         )}
         {canDelete &&
           (confirmingDelete ? (
@@ -206,7 +203,7 @@ function ContactItem({ contact }: { contact: Contact }) {
               <button onClick={() => setConfirmingDelete(false)}>Cancel</button>
             </>
           ) : (
-            <button onClick={() => setConfirmingDelete(true)}>Delete</button>
+            <IconButton label="Delete contact" tone="danger" icon={<TrashIcon />} onClick={() => setConfirmingDelete(true)} />
           ))}
       </div>
       {deleteContact.error && <p className="error">{deleteContact.error.message}</p>}

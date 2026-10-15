@@ -258,6 +258,68 @@ button:disabled {
   color: var(--text);
 }
 
+/* Row actions: a coloured icon, its name in a tooltip on hover or keyboard focus */
+.action-icon {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--icon-color);
+}
+
+.action-icon.tone-accent { --icon-color: var(--accent); --icon-bg: var(--accent-soft); }
+.action-icon.tone-danger { --icon-color: var(--red); --icon-bg: var(--red-soft); }
+.action-icon.tone-warn { --icon-color: var(--amber); --icon-bg: var(--amber-soft); }
+.action-icon.tone-ok { --icon-color: var(--green); --icon-bg: var(--green-soft); }
+.action-icon.tone-neutral { --icon-color: var(--muted); --icon-bg: var(--surface-2); }
+
+.action-icon:hover:not(:disabled) {
+  background: var(--icon-bg);
+}
+
+.action-icon::after {
+  content: attr(data-tip);
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  z-index: 30;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  background: var(--text);
+  color: var(--bg);
+  font-size: 0.75rem;
+  font-weight: 500;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(-50%, 2px);
+  transition: opacity 0.12s, transform 0.12s;
+}
+
+.action-icon:hover::after,
+.action-icon:focus-visible::after {
+  opacity: 1;
+  transform: translate(-50%, 0);
+  transition-delay: 0.25s;
+}
+
+/* The last icon in a row would push its tooltip past the card edge */
+.action-icon:last-child::after {
+  left: auto;
+  right: 0;
+  transform: translateY(2px);
+}
+
+.action-icon:last-child:hover::after,
+.action-icon:last-child:focus-visible::after {
+  transform: none;
+}
+
 input,
 select,
 textarea {
@@ -604,7 +666,7 @@ code.block {
 }
 
 /* Actions on list rows stay quiet until hovered; only confirmations are filled */
-.row-actions button:not(.primary):not(.danger),
+.row-actions button:not(.primary):not(.danger):not(.action-icon),
 .row-actions a.button:not(.primary) {
   height: 28px;
   padding: 0 8px;
@@ -613,7 +675,7 @@ code.block {
   color: var(--muted);
 }
 
-.row-actions button:not(.primary):not(.danger):hover {
+.row-actions button:not(.primary):not(.danger):not(.action-icon):hover {
   background: var(--surface-2);
   color: var(--text);
 }
@@ -623,7 +685,7 @@ code.block {
 }
 
 /* Settings: Sync now / Reconnect / Disconnect are real buttons, not row actions */
-.card > .row-actions button:not(.primary),
+.card > .row-actions button:not(.primary):not(.action-icon),
 .card > .row-actions a.button:not(.primary) {
   border-color: var(--border-strong);
   color: var(--text);
@@ -1199,7 +1261,7 @@ code.block {
   font-size: 0.85rem;
 }
 
-.payment .row-actions button:not(.icon-button):not(.link-button) {
+.payment .row-actions button:not(.icon-button):not(.link-button):not(.action-icon) {
   height: 26px;
   font-size: 0.85rem;
   padding: 0 8px;

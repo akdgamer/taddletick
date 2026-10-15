@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useCompletedProjects, useDeleteProject, useUpdateProject } from '../api/hooks'
 import type { Project } from '../api/types'
 import { formatDate } from '../format'
+import { IconButton, RestoreIcon, TrashIcon } from './Icons'
 
 export function CompletedList() {
   const { data: projects, isPending, error } = useCompletedProjects()
@@ -42,9 +43,12 @@ function CompletedRow({ project }: { project: Project }) {
       </div>
       <div className="row-actions">
         {project.access.can_edit && (
-          <button onClick={() => updateProject.mutate({ id: project.id, body: { is_completed: false } })}>
-            Restore
-          </button>
+          <IconButton
+            label="Restore"
+            tone="ok"
+            icon={<RestoreIcon />}
+            onClick={() => updateProject.mutate({ id: project.id, body: { is_completed: false } })}
+          />
         )}
         {project.access.can_delete &&
           (confirmingDelete ? (
@@ -55,7 +59,7 @@ function CompletedRow({ project }: { project: Project }) {
               <button onClick={() => setConfirmingDelete(false)}>Cancel</button>
             </>
           ) : (
-            <button onClick={() => setConfirmingDelete(true)}>Delete</button>
+            <IconButton label="Delete project" tone="danger" icon={<TrashIcon />} onClick={() => setConfirmingDelete(true)} />
           ))}
       </div>
     </li>
