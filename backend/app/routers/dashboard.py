@@ -13,6 +13,7 @@ from app.schemas import (
     DashboardProject,
     DashboardStage,
     FileRead,
+    NoteRead,
     PaymentRead,
     ProjectAccess,
     ProjectStageRead,
@@ -68,6 +69,7 @@ def dashboard(
                 for pay in (p.payments if access["can_view_payments"] else [])
             ],
             files=[FileRead.model_validate(f) for f in p.files],
+            log=[NoteRead.model_validate(n) for n in p.log],
         )
         for p, access in visible
     ]

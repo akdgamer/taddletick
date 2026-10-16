@@ -87,6 +87,16 @@ class User(Base):
         return self.role.is_admin or getattr(self.role, permission)
 
 
+class LoginFailure(Base):
+    """A wrong password for a username, kept for a while to slow down guessing."""
+
+    __tablename__ = "login_failures"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    username: Mapped[str] = mapped_column(String(100), index=True)  # lowercased; may not exist
+    at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), index=True)
+
+
 class UserSession(Base):
     """A logged-in browser. The cookie holds a random token; only its hash is stored."""
 
@@ -189,6 +199,12 @@ class Project(Base):
         lazy="selectin",
         order_by="ProjectFile.uploaded_at.desc()",
     )
+    log: Mapped[list["ProjectNote"]] = relationship(
+        back_populates="project",
+        cascade="all, delete-orphan",
+        lazy="selectin",
+        order_by="(ProjectNote.created_at.desc(), ProjectNote.id.desc())",
+    )
 
     @property
     def allowed_role_ids(self) -> list[int]:
@@ -261,6 +277,22 @@ class ProjectFile(Base):
     uploaded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     project: Mapped[Project] = relationship(back_populates="files")
+
+
+class ProjectNote(Base):
+    """A dated entry in a project's log: what happened, what was agreed."""
+
+    __tablename__ = "project_notes"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    project_id: Mapped[int] = mapped_column(ForeignKey("projects.id", ondelete="CASCADE"), index=True)
+    author_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
+    body: Mapped[str] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    edited_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+    project: Mapped[Project] = relationship(back_populates="log")
+    author: Mapped[User | None] = relationship(lazy="joined")
 
 
 class Recurrence(str, enum.Enum):

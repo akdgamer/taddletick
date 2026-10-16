@@ -6,6 +6,7 @@ import { plural, relativeDays, shortDate } from '../format'
 import { EditProjectForm } from './EditProjectForm'
 import { FilesSection } from './FilesSection'
 import { ChevronIcon, Menu } from './Menu'
+import { NotesSection } from './NotesSection'
 import { PaymentsSection } from './PaymentsSection'
 import { StageRow } from './StageRow'
 import { afterSave, useToast } from './useToast'
@@ -164,6 +165,12 @@ export function ProjectTile({ project }: { project: DashboardProject }) {
         )}
       </div>
 
+      <NotesSection
+        projectId={project.id}
+        notes={project.log}
+        canAdd={access.can_edit}
+        canDelete={access.can_delete}
+      />
       {access.can_view_payments && (
         <PaymentsSection
           projectId={project.id}

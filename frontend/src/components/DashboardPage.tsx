@@ -3,11 +3,13 @@ import { Fragment, useState } from 'react'
 import { useDashboard } from '../api/hooks'
 import { revealProject, useCommand } from '../commands'
 import { plural } from '../format'
+import { applyFilters, NO_FILTERS, useFilters, type Filters } from '../projectFilters'
 import { CompletedList } from './CompletedList'
 import { ChasePanel, TodayPanel } from './DashboardPanels'
 import { FolderIcon } from './Icons'
 import { NewProjectForm } from './NewProjectForm'
 import { EmptyState, SkeletonTiles } from './Placeholders'
+import { ProjectFilters } from './ProjectFilters'
 import { ProjectTile } from './ProjectTile'
 
 type View = 'active' | 'completed'
@@ -15,6 +17,7 @@ type View = 'active' | 'completed'
 export function DashboardPage() {
   const [view, setView] = useState<View>('active')
   const [creating, setCreating] = useState(false)
+  const [filters, setFilters] = useFilters()
 
   useCommand((command) => {
     if (command.type === 'new-project') {
@@ -22,6 +25,7 @@ export function DashboardPage() {
       setCreating(true)
     } else if (command.type === 'show-project') {
       setView('active')
+      setFilters(NO_FILTERS) // the project may be filtered out
       // Wait a frame in case the active list is only now rendering
       requestAnimationFrame(() => revealProject(command.id))
     }
@@ -57,7 +61,12 @@ export function DashboardPage() {
             <TodayPanel />
             <ChasePanel />
           </div>
-          <ActiveProjects hideEmptyMessage={creating} onCreate={() => setCreating(true)} />
+          <ActiveProjects
+            hideEmptyMessage={creating}
+            onCreate={() => setCreating(true)}
+            filters={filters}
+            onFiltersChange={setFilters}
+          />
         </>
       ) : (
         <CompletedList />
@@ -66,14 +75,32 @@ export function DashboardPage() {
   )
 }
 
-function ActiveProjects({ hideEmptyMessage, onCreate }: { hideEmptyMessage: boolean; onCreate: () => void }) {
-  const { data: projects, isPending, error } = useDashboard()
+interface ActiveProps {
+  hideEmptyMessage: boolean
+  onCreate: () => void
+  filters: Filters
+  onFiltersChange: (filters: Filters) => void
+}
+
+function ActiveProjects({ hideEmptyMessage, onCreate, filters, onFiltersChange }: ActiveProps) {
+  const { data: all, isPending, error } = useDashboard()
+  const projects = all && applyFilters(all, filters)
 
   return (
     <>
       {isPending && <SkeletonTiles />}
       {error && <p className="error">Couldn't load the dashboard: {error.message}. Is the API running?</p>}
-      {projects?.length === 0 && !hideEmptyMessage && (
+      {all && all.length > 1 && (
+        <ProjectFilters projects={all} filters={filters} onChange={onFiltersChange} shown={projects?.length ?? 0} />
+      )}
+      {all && all.length > 0 && projects?.length === 0 && (
+        <EmptyState icon={<FolderIcon />} title="No projects match these filters">
+          <button className="link-button" onClick={() => onFiltersChange(NO_FILTERS)}>
+            Clear filters
+          </button>
+        </EmptyState>
+      )}
+      {all?.length === 0 && !hideEmptyMessage && (
         <EmptyState
           icon={<FolderIcon />}
           title="No active projects"

@@ -40,7 +40,7 @@ def clean_tables():
         conn.execute(text(
             "TRUNCATE projects, project_stages, project_stage_contacts, contacts, clients, payments, "
             "project_files, tasks, task_completions, synced_items, google_account, project_roles, "
-            "user_sessions, users RESTART IDENTITY CASCADE"
+            "user_sessions, users, project_notes, login_failures RESTART IDENTITY CASCADE"
         ))
         # Keep the seeded catalogs (stages, 4 starter roles), drop anything a test added
         conn.execute(text("DELETE FROM stage_types WHERE sort_order > 11"))

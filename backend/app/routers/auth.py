@@ -56,10 +56,15 @@ def setup(body: SetupBody, response: Response, session: Session = Depends(get_se
 
 @router.post("/login", response_model=UserRead)
 def login(body: LoginBody, response: Response, session: Session = Depends(get_session)):
+    # Checked before the password, so a right guess during a lockout doesn't get through either
+    auth.check_not_locked(session, body.username)
     user = find_user(session, body.username)
     password_ok = auth.check_password(body.password, user.password_hash if user else _DUMMY_HASH)
     if user is None or not password_ok or not user.is_active:
+        if not password_ok:
+            auth.record_failure(session, body.username)
         raise HTTPException(401, "Wrong username or password")
+    auth.clear_failures(session, body.username)
     auth.start_session(session, response, user)
     return user
 
@@ -81,8 +86,12 @@ def change_password(
     session: Session = Depends(get_session),
     user: User = Depends(current_user),
 ):
+    # Same limit, so a borrowed logged-in browser can't be used to guess the password
+    auth.check_not_locked(session, user.username)
     if not auth.check_password(body.current_password, user.password_hash):
+        auth.record_failure(session, user.username)
         raise HTTPException(400, "Current password is wrong")
+    auth.clear_failures(session, user.username)
     user.password_hash = auth.hash_password(body.new_password)
     # Log out every other browser, keep this one logged in with a fresh session
     auth.end_all_sessions(session, user.id)

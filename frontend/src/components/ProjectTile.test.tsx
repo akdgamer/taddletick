@@ -28,6 +28,7 @@ const project: DashboardProject = {
   allowed_role_ids: [],
   access: FULL_ACCESS,
   files: [],
+  log: [],
 }
 
 describe('ProjectTile', () => {

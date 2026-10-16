@@ -11,6 +11,7 @@ from app.routers import (
     dashboard,
     files,
     google,
+    notes,
     payments,
     projects,
     stage_types,
@@ -33,7 +34,9 @@ app.add_middleware(
 # Login, setup and Google's redirect are open; everything else needs a logged-in user
 app.include_router(auth.router)
 app.include_router(google.callback_router)
-for module in (dashboard, projects, stages, stage_types, clients, contacts, payments, files, tasks, google, users):
+for module in (
+    dashboard, projects, stages, stage_types, clients, contacts, payments, files, notes, tasks, google, users
+):
     app.include_router(module.router, dependencies=[Depends(current_user)])
 
 

@@ -211,6 +211,12 @@ export const useUploadFile = () =>
 
 export const useDeleteFile = () => useProjectMutation((id: number) => api.deleteFile(id))
 
+export const useAddNote = () =>
+  useProjectMutation(({ projectId, body }: { projectId: number; body: string }) => api.addNote(projectId, body))
+export const useUpdateNote = () =>
+  useProjectMutation(({ id, body }: { id: number; body: string }) => api.updateNote(id, body))
+export const useDeleteNote = () => useProjectMutation((id: number) => api.deleteNote(id))
+
 export const useTasks = () => useQuery({ queryKey: [...keys.tasks, 'all'], queryFn: api.tasks })
 export const useTodayTasks = () => useQuery({ queryKey: [...keys.tasks, 'today'], queryFn: api.todayTasks })
 

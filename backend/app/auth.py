@@ -1,6 +1,8 @@
 """Logins and permissions.
 
-Passwords are hashed with scrypt (Python's standard library). A login creates a
+Passwords are hashed with scrypt (Python's standard library). After 5 wrong
+passwords for a username within 15 minutes, that username can't log in until the
+oldest of them is 15 minutes old. A login creates a
 random session token: the browser keeps it in an HttpOnly cookie and the database
 keeps only its SHA-256, so a leaked database can't be used to log in.
 
@@ -16,14 +18,17 @@ import secrets
 from datetime import datetime, timedelta, timezone
 
 from fastapi import Depends, HTTPException, Request, Response
+from sqlalchemy import delete, func, select
 from sqlalchemy.orm import Session
 
 from app.config import settings
 from app.db import get_session
-from app.models import Project, ProjectLabel, User, UserSession
+from app.models import LoginFailure, Project, ProjectLabel, User, UserSession
 
 COOKIE = "taddletick_session"
 _SCRYPT = {"n": 2**14, "r": 8, "p": 1}
+MAX_FAILURES = 5
+LOCKOUT = timedelta(minutes=15)
 
 
 # --- Passwords --------------------------------------------------------------
@@ -42,6 +47,43 @@ def check_password(password: str, stored: str) -> bool:
         return False
     actual = hashlib.scrypt(password.encode(), salt=bytes.fromhex(salt), **_SCRYPT)
     return hmac.compare_digest(actual, bytes.fromhex(digest))
+
+
+# --- Guessing protection ----------------------------------------------------
+# Counted per username (also ones that don't exist, so the answer doesn't reveal which do).
+# Not per IP: behind Tailscale's proxy every request comes from the same address.
+
+
+def check_not_locked(session: Session, username: str) -> None:
+    """429 while a username has too many recent wrong passwords, saying how long to wait."""
+    since = datetime.now(timezone.utc) - LOCKOUT
+    recent = session.scalars(
+        select(LoginFailure.at)
+        .where(LoginFailure.username == username.strip().lower(), LoginFailure.at > since)
+        .order_by(LoginFailure.at.desc())
+        .limit(MAX_FAILURES)
+    ).all()
+    if len(recent) < MAX_FAILURES:
+        return
+    # Unlocks when the oldest of the last five falls out of the window
+    wait = recent[-1] + LOCKOUT - datetime.now(timezone.utc)
+    minutes = max(1, -(-int(wait.total_seconds()) // 60))
+    raise HTTPException(
+        429,
+        f"Too many wrong passwords. Try again in {minutes} minute{'s' if minutes != 1 else ''}.",
+        headers={"Retry-After": str(max(1, int(wait.total_seconds())))},
+    )
+
+
+def record_failure(session: Session, username: str) -> None:
+    session.add(LoginFailure(username=username.strip().lower()[:100], at=datetime.now(timezone.utc)))
+    # Old entries are useless; tidy up as we go
+    session.execute(delete(LoginFailure).where(LoginFailure.at < datetime.now(timezone.utc) - timedelta(days=1)))
+    session.commit()
+
+
+def clear_failures(session: Session, username: str) -> None:
+    session.execute(delete(LoginFailure).where(LoginFailure.username == username.strip().lower()))
 
 
 # --- Sessions ---------------------------------------------------------------

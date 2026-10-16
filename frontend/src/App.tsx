@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { ApiError } from './api/client'
 import { useCan, useLogout, useMe, useSetupNeeded } from './api/hooks'
 import type { User } from './api/types'
+import { initials } from './format'
 import { CommandPalette, SearchIcon } from './components/CommandPalette'
 import { ContactsPage } from './components/ContactsPage'
 import { DashboardPage } from './components/DashboardPage'
@@ -89,12 +90,6 @@ function Shell({ user }: { user: User }) {
   }, [])
   // Settings lives in the user menu; the tabs are the everyday pages
   const tabs = (Object.keys(PAGES) as Page[]).filter((p) => p !== 'settings' && (p !== 'users' || isAdmin))
-  const initials = user.display_name
-    .split(/\s+/)
-    .map((w) => w[0])
-    .join('')
-    .slice(0, 2)
-    .toUpperCase()
 
   return (
     <>
@@ -122,7 +117,7 @@ function Shell({ user }: { user: User }) {
             trigger={
               <>
                 <span className="avatar" aria-hidden>
-                  {initials}
+                  {initials(user.display_name)}
                 </span>
                 <span className="avatar-name">{user.display_name}</span>
               </>

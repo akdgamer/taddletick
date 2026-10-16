@@ -2,7 +2,7 @@
 
 from datetime import date, datetime
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.models import ProjectLabel, Recurrence, StageStatus
 from app.urgency import Flag
@@ -213,6 +213,28 @@ class FileRead(ORMModel):
     uploaded_at: datetime
 
 
+# Project notes log
+
+class NoteBody(BaseModel):
+    body: str = Field(min_length=1, max_length=5000)
+
+    @field_validator("body")
+    @classmethod
+    def not_blank(cls, v: str) -> str:
+        if not v.strip():
+            raise ValueError("Write something first")
+        return v.strip()
+
+
+class NoteRead(ORMModel):
+    id: int
+    project_id: int
+    body: str
+    author: UserRef | None
+    created_at: datetime
+    edited_at: datetime | None
+
+
 # Projects
 
 class ProjectRef(ORMModel):
@@ -298,6 +320,7 @@ class DashboardProject(ProjectBase):
     stages: list[DashboardStage]
     payments: list[DashboardPayment]
     files: list[FileRead]
+    log: list[NoteRead]
 
 
 class OutstandingPayment(DashboardPayment):

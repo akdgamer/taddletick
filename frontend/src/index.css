@@ -2332,3 +2332,234 @@ kbd {
     flex: 1;
   }
 }
+
+/* ---------- Project notes log ---------- */
+
+.note-composer {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.note-input {
+  min-height: 60px;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.note-composer-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+}
+
+.note-composer-actions .muted {
+  margin-right: auto;
+}
+
+.note-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+}
+
+.note {
+  position: relative;
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr);
+  gap: 10px;
+  padding: 10px 0;
+}
+
+/* A thin timeline from each avatar down to the next */
+.note:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  left: 12.5px;
+  top: 40px; /* 10px padding + 26px avatar + 4px gap */
+  bottom: -6px;
+  width: 1px;
+  background: var(--border-strong);
+}
+
+.avatar.small {
+  width: 26px;
+  height: 26px;
+  font-size: 0.66rem;
+}
+
+.note-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 26px;
+  font-size: 0.86rem;
+}
+
+.note-head strong {
+  font-weight: 600;
+}
+
+.note-actions {
+  margin-left: auto;
+  display: flex;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity 0.12s;
+}
+
+.note:hover .note-actions,
+.note:focus-within .note-actions {
+  opacity: 1;
+}
+
+/* No hover on touch screens: always show */
+@media (hover: none) {
+  .note-actions {
+    opacity: 1;
+  }
+}
+
+.note-actions .action-icon {
+  width: 26px;
+  height: 26px;
+}
+
+.note-body {
+  margin: 2px 0 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.5;
+}
+
+/* ---------- Project filters ---------- */
+
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 10px;
+  margin: 4px 0 14px;
+}
+
+.filter-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 240px;
+  color: var(--muted);
+}
+
+.filter-search svg {
+  position: absolute;
+  left: 10px;
+  pointer-events: none;
+}
+
+.filter-search input {
+  height: 32px;
+  padding-left: 32px;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.chip-toggle {
+  height: 32px;
+  gap: 6px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border-color: var(--border);
+  background: var(--surface);
+  color: var(--text-2);
+  font-weight: 500;
+}
+
+.chip-toggle:hover {
+  border-color: var(--border-strong);
+  background: var(--surface);
+}
+
+.chip-toggle[aria-pressed='true'] {
+  border-color: var(--text);
+  background: var(--text);
+  color: var(--bg);
+}
+
+.chip-count {
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.chip-toggle.tone-red .chip-count:not(:empty) {
+  background: var(--red-soft);
+  color: var(--red);
+}
+
+.chip-toggle.tone-amber .chip-count {
+  background: var(--amber-soft);
+  color: var(--amber);
+}
+
+.chip-toggle[aria-pressed='true'] .chip-count {
+  background: rgb(127 127 127 / 0.3);
+  color: inherit;
+}
+
+.filter-select {
+  width: auto;
+  height: 32px;
+  min-height: 0;
+}
+
+.filter-result {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.86rem;
+}
+
+.filter-result .text-button {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.filter-result svg {
+  width: 13px;
+  height: 13px;
+}
+
+@media (max-width: 640px) {
+  .filter-search {
+    width: 100%;
+  }
+
+  .chips {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    width: 100%;
+  }
+
+  .chip-toggle {
+    flex-shrink: 0;
+  }
+
+  .filter-select {
+    flex: 1;
+  }
+}

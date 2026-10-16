@@ -206,6 +206,15 @@ export interface DashboardStage extends ProjectStage {
   flag: Flag
 }
 
+export interface ProjectNote {
+  id: number
+  project_id: number
+  body: string
+  author: UserRef | null
+  created_at: string
+  edited_at: string | null
+}
+
 export interface DashboardProject extends ProjectFields {
   id: number
   client: ClientRef | null
@@ -218,4 +227,5 @@ export interface DashboardProject extends ProjectFields {
   stages: DashboardStage[]
   payments: DashboardPayment[]
   files: ProjectFile[]
+  log: ProjectNote[]
 }

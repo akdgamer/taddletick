@@ -26,6 +26,7 @@ const project: DashboardProject = {
   allowed_role_ids: [],
   access: FULL_ACCESS,
   files: [],
+  log: [],
 }
 
 function sentRequest(fetchMock: ReturnType<typeof mockFetch>, method: string) {

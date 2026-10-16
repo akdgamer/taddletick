@@ -14,6 +14,7 @@ import type {
   Payment,
   PaymentFields,
   ProjectFile,
+  ProjectNote,
   Task,
   TaskFields,
   TodayTask,
@@ -122,6 +123,10 @@ export const api = {
   },
   fileUrl: (id: number) => `${API_URL}/files/${id}`,
   deleteFile: (id: number) => request<void>('DELETE', `/files/${id}`),
+
+  addNote: (projectId: number, body: string) => request<ProjectNote>('POST', `/projects/${projectId}/notes`, { body }),
+  updateNote: (id: number, body: string) => request<ProjectNote>('PATCH', `/notes/${id}`, { body }),
+  deleteNote: (id: number) => request<void>('DELETE', `/notes/${id}`),
 
   tasks: () => request<Task[]>('GET', '/tasks'),
   todayTasks: () => request<TodayTask[]>('GET', '/tasks/today'),
