@@ -2,6 +2,9 @@ import { useState, type FormEvent } from 'react'
 
 import { api } from '../api/client'
 import { useChangePassword, useGoogleDisconnect, useGoogleStatus, useGoogleSync } from '../api/hooks'
+import { timeAgo } from '../format'
+import { RestoreIcon } from './Icons'
+import { useToast } from './useToast'
 
 const RESULT_MESSAGES: Record<string, string> = {
   connected: 'Google connected. The first sync runs within a few minutes, or press Sync now.',
@@ -13,6 +16,7 @@ export function SettingsPage({ googleResult }: { googleResult: string | null }) 
   const { data: status, isPending, error } = useGoogleStatus()
   const sync = useGoogleSync()
   const disconnect = useGoogleDisconnect()
+  const toast = useToast()
 
   return (
     <main className="page narrow">
@@ -20,14 +24,23 @@ export function SettingsPage({ googleResult }: { googleResult: string | null }) 
         <h1>Settings</h1>
       </header>
 
-      <section className="card">
-        <h2>Google Calendar &amp; Tasks</h2>
-        <p className="muted">
-          Connect your own Google account. Dispatch dates, unfinished stage due dates and (if your role can see them)
-          unpaid payment due dates of the projects you can see are copied to a calendar named "Taddletick", with a
-          reminder at 9:00 the day before. Your open tasks for today go to a Google Tasks list of the same name. Copying
-          is one way: changes made in Google are overwritten.
-        </p>
+      <section className="card settings-card">
+        <header className="settings-head">
+          <div>
+            <h2>Google Calendar &amp; Tasks</h2>
+            <p className="muted">
+              Deadlines from the projects you can see are copied to a "Taddletick" calendar, with a reminder at 9:00 the
+              day before: dispatch dates, unfinished stage due dates, and unpaid payments if your role can see them.
+              Today's open tasks go to a Google Tasks list of the same name.
+            </p>
+            <p className="muted small">Copying is one way: changes made in Google are overwritten.</p>
+          </div>
+          {status?.configured && (
+            <span className={`status-badge ${status.connected ? 'on' : 'off'}`}>
+              {status.connected ? 'Connected' : 'Not connected'}
+            </span>
+          )}
+        </header>
 
         {googleResult && RESULT_MESSAGES[googleResult] && <p className="notice">{RESULT_MESSAGES[googleResult]}</p>}
         {isPending && <p className="muted">Checking…</p>}
@@ -46,24 +59,46 @@ export function SettingsPage({ googleResult }: { googleResult: string | null }) 
         )}
 
         {status?.configured && (
-          <>
-            <p>
-              Status: <strong>{status.connected ? 'Connected' : 'Not connected'}</strong>
-              {status.last_sync_at && (
-                <span className="muted"> · last synced {new Date(status.last_sync_at).toLocaleString()}</span>
-              )}
-            </p>
-            {status.last_error && <p className="error">Last error: {status.last_error}</p>}
-            <div className="row-actions">
+          <div className="connection">
+            <div className="connection-info">
               {status.connected ? (
                 <>
-                  <button className="primary" onClick={() => sync.mutate()} disabled={sync.isPending}>
-                    {sync.isPending ? 'Syncing…' : 'Sync now'}
+                  <strong>Last synced</strong>
+                  <span className="muted" title={status.last_sync_at ? new Date(status.last_sync_at).toLocaleString() : ''}>
+                    {status.last_sync_at ? timeAgo(status.last_sync_at) : 'Not yet; the first sync runs within minutes'}
+                  </span>
+                </>
+              ) : (
+                <>
+                  <strong>No account connected</strong>
+                  <span className="muted">You'll be asked to allow access to calendars and tasks it creates.</span>
+                </>
+              )}
+            </div>
+            <div className="connection-actions">
+              {status.connected ? (
+                <>
+                  <button
+                    className="text-button danger-text"
+                    onClick={() =>
+                      disconnect.mutate(undefined, { onSuccess: () => toast({ message: 'Google account disconnected' }) })
+                    }
+                  >
+                    Disconnect
                   </button>
                   <a className="button" href={api.googleConnectUrl()}>
                     Reconnect
                   </a>
-                  <button onClick={() => disconnect.mutate()}>Disconnect</button>
+                  <button
+                    className="primary"
+                    disabled={sync.isPending}
+                    onClick={() => sync.mutate(undefined, { onSuccess: () => toast({ message: 'Synced with Google' }) })}
+                  >
+                    <span className={sync.isPending ? 'spin' : ''}>
+                      <RestoreIcon />
+                    </span>
+                    {sync.isPending ? 'Syncing…' : 'Sync now'}
+                  </button>
                 </>
               ) : (
                 <a className="button primary" href={api.googleConnectUrl()}>
@@ -71,10 +106,10 @@ export function SettingsPage({ googleResult }: { googleResult: string | null }) 
                 </a>
               )}
             </div>
-            {sync.isSuccess && <p className="muted">Sync finished.</p>}
-            {sync.error && <p className="error">{sync.error.message}</p>}
-          </>
+          </div>
         )}
+        {status?.last_error && <p className="error">Last error: {status.last_error}</p>}
+        {sync.error && <p className="error">{sync.error.message}</p>}
       </section>
 
       <PasswordSection />
@@ -84,6 +119,7 @@ export function SettingsPage({ googleResult }: { googleResult: string | null }) 
 
 function PasswordSection() {
   const change = useChangePassword()
+  const toast = useToast()
   const [f, setF] = useState({ current: '', next: '', confirm: '' })
   const set = (key: keyof typeof f, value: string) => setF({ ...f, [key]: value })
   const mismatch = f.confirm !== '' && f.next !== f.confirm
@@ -93,13 +129,23 @@ function PasswordSection() {
     if (mismatch) return
     change.mutate(
       { current: f.current, next: f.next },
-      { onSuccess: () => setF({ current: '', next: '', confirm: '' }) },
+      {
+        onSuccess: () => {
+          setF({ current: '', next: '', confirm: '' })
+          toast({ message: 'Password changed. Other devices were logged out.' })
+        },
+      },
     )
   }
 
   return (
-    <section className="card">
-      <h2>Password</h2>
+    <section className="card settings-card">
+      <header className="settings-head">
+        <div>
+          <h2>Password</h2>
+          <p className="muted">Changing it logs you out everywhere else.</p>
+        </div>
+      </header>
       <form className="stack-form" onSubmit={submit}>
         <div className="form-grid">
           <label>
@@ -137,7 +183,6 @@ function PasswordSection() {
         </div>
         {mismatch && <p className="error">The new passwords don't match.</p>}
         {change.error && <p className="error">{change.error.message}</p>}
-        {change.isSuccess && <p className="muted">Password changed. Other devices have been logged out.</p>}
         <div className="form-actions">
           <button type="submit" className="primary" disabled={change.isPending || mismatch}>
             Change password

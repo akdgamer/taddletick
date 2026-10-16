@@ -48,6 +48,16 @@ export function dueText(iso: string): string {
   return `Due ${shortDate(iso)}`
 }
 
+/** "just now", "5 minutes ago", "3 hours ago", then the date */
+export function timeAgo(isoDateTime: string, now = Date.now()): string {
+  const minutes = Math.round((now - new Date(isoDateTime).getTime()) / 60_000)
+  if (minutes < 1) return 'just now'
+  if (minutes < 60) return `${plural(minutes, 'minute')} ago`
+  const hours = Math.round(minutes / 60)
+  if (hours < 24) return `${plural(hours, 'hour')} ago`
+  return new Date(isoDateTime).toLocaleString(undefined, { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })
+}
+
 export function plural(n: number, word: string): string {
   return `${n} ${word}${n === 1 ? '' : 's'}`
 }

@@ -2188,3 +2188,147 @@ kbd {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ---------- Settings ---------- */
+
+.settings-card {
+  padding: 22px 24px;
+}
+
+.settings-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.settings-head h2 {
+  margin: 0 0 6px;
+}
+
+.settings-head p {
+  max-width: 64ch;
+  margin: 0;
+  line-height: 1.6;
+}
+
+.settings-head p + p {
+  margin-top: 6px;
+}
+
+.small {
+  font-size: 0.85rem;
+}
+
+.status-badge {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 24px;
+  padding: 0 10px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.status-badge::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.status-badge.on {
+  background: var(--green-soft);
+  color: var(--green);
+}
+
+.status-badge.off {
+  background: var(--surface-2);
+  color: var(--muted);
+}
+
+/* The connected account: what happened last on the left, what you can do on the right */
+.connection {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+}
+
+.connection-info {
+  display: grid;
+  gap: 2px;
+}
+
+.connection-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.connection-actions .button,
+.connection-actions button {
+  height: 34px;
+  padding: 0 14px;
+}
+
+.connection-actions .text-button {
+  padding: 0 10px;
+}
+
+.connection-actions .button:not(.primary) {
+  background: var(--surface);
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(-360deg);
+  }
+}
+
+.spin,
+.connection-actions .primary span {
+  display: inline-grid;
+}
+
+.spin {
+  animation: spin 0.9s linear infinite;
+}
+
+.settings-card .form-grid {
+  gap: 16px;
+}
+
+.settings-card .form-actions {
+  margin-top: 6px;
+}
+
+@media (max-width: 640px) {
+  .settings-card {
+    padding: 18px 16px;
+  }
+
+  .settings-head {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .connection-actions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .connection-actions .primary {
+    flex: 1;
+  }
+}
