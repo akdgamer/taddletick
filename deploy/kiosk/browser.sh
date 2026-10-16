@@ -9,9 +9,14 @@ ROTATE="${ROTATE:-normal}"
 until curl -sf http://localhost:8000/health >/dev/null; do sleep 2; done
 
 URL="http://localhost:8000/?display"
+# Touch calibration: `touch ~/.taddletick-display-calibrate` and restart the service
+if [ -f "$HOME/.taddletick-display-calibrate" ]; then
+  rm -f "$HOME/.taddletick-display-calibrate"
+  URL="file://$(dirname "$(readlink -f "$0")")/calibrate.html"
+fi
 # First start after `install.sh --pair`: a one-time code waits in this file
 PAIR_FILE="$HOME/.taddletick-display-pair"
-if [ -f "$PAIR_FILE" ]; then
+if [ -f "$PAIR_FILE" ] && [ "${URL#http}" != "$URL" ]; then
   URL="$URL&pair=$(cat "$PAIR_FILE")"
   rm -f "$PAIR_FILE"
 fi

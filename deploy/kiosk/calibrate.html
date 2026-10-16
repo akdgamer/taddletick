@@ -1,0 +1,37 @@
+<!doctype html>
+<!-- Touch calibration targets for the desk display. Opened by browser.sh when
+     ~/.taddletick-display-calibrate exists; raw touches are recorded with evtest meanwhile. -->
+<html>
+<head>
+<meta charset="utf-8">
+<title>Calibrate</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #111; color: #ddd; font: 16px system-ui, sans-serif; overflow: hidden; cursor: none; }
+  #msg { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; padding: 0 70px; }
+  .target { position: absolute; width: 40px; height: 40px; transform: translate(-50%, -50%); }
+  .target::before, .target::after { content: ''; position: absolute; background: #ff5a4f; }
+  .target::before { left: 19px; top: 0; width: 2px; height: 40px; }
+  .target::after { top: 19px; left: 0; height: 2px; width: 40px; }
+  .ring { position: absolute; inset: 8px; border: 2px solid #ff5a4f; border-radius: 50%; }
+</style>
+</head>
+<body>
+<div id="msg"></div>
+<div class="target" id="t"><div class="ring"></div></div>
+<script>
+  // Same order the touches are read back in: top-left, top-right, bottom-right, bottom-left
+  const POINTS = [[10, 10], [90, 10], [90, 90], [10, 90]]
+  const t = document.getElementById('t'), msg = document.getElementById('msg')
+  let i = 0
+  function show() {
+    if (i >= POINTS.length) { t.style.display = 'none'; msg.textContent = 'Done. Thanks!'; return }
+    t.style.left = POINTS[i][0] + '%'; t.style.top = POINTS[i][1] + '%'
+    msg.textContent = 'Press and hold the centre of the red target (' + (i + 1) + ' of 4)'
+  }
+  // Touch may be mapped wrongly right now, so any release anywhere moves to the next target
+  let last = 0
+  addEventListener('pointerup', () => { if (Date.now() - last > 600) { last = Date.now(); i++; show() } })
+  show()
+</script>
+</body>
+</html>
