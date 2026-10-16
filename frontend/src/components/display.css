@@ -1,0 +1,304 @@
+/* Desk display: designed for a 480×320 touch screen, read from a metre away. */
+
+.display {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 15px;
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+  /* A touch screen: no mouse pointer floating in the middle */
+  cursor: none;
+}
+
+.display * {
+  cursor: none;
+}
+
+.d-head {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  height: 46px;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.d-clock {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.d-clock strong {
+  font-size: 1.6rem;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.d-clock span {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.d-health {
+  display: flex;
+  gap: 10px;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.d-dot {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.d-dot::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--border-strong);
+}
+
+.d-dot.ok::before { background: var(--green); }
+.d-dot.warn::before { background: var(--amber); }
+.d-dot.bad::before { background: var(--red); }
+.d-dot.bad { color: var(--red); }
+
+.d-body {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+
+.d-col {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 8px 10px 6px;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.d-col + .d-col {
+  border-left: 1px solid var(--border);
+}
+
+.d-col h2 {
+  margin: 0 0 6px;
+  font-size: 0.7rem;
+  font-weight: 650;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.d-count {
+  margin-left: 4px;
+  color: var(--text-2);
+}
+
+.d-quiet {
+  margin: 4px 0;
+  color: var(--muted);
+}
+
+.d-calm::before {
+  content: '✓ ';
+  color: var(--green);
+}
+
+.d-tasks,
+.d-alerts {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* Big rows: a fingertip, not a mouse */
+.d-tasks button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 42px;
+  height: auto;
+  padding: 6px 4px;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  border-radius: 0;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  font-weight: 500;
+  text-align: left;
+  white-space: normal;
+  justify-content: flex-start;
+}
+
+.d-tasks button:active {
+  background: var(--surface-2);
+  transform: none;
+}
+
+.d-box {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  border: 2px solid var(--border-strong);
+  border-radius: 6px;
+  transition:
+    background 0.15s,
+    border-color 0.15s;
+}
+
+.d-tasks button.done .d-box {
+  border-color: var(--green);
+  background: var(--green)
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 10'%3E%3Cpath d='M1 5l3.5 3.5L11 1' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")
+    center / 12px no-repeat;
+}
+
+.d-tasks button.done .d-task-text {
+  color: var(--muted);
+  text-decoration: line-through;
+}
+
+.d-task-text em {
+  font-style: normal;
+  color: var(--red);
+  font-size: 0.8rem;
+}
+
+.d-alerts li {
+  display: grid;
+  gap: 1px;
+  padding: 5px 0 5px 9px;
+  border-left: 3px solid var(--amber);
+  margin-bottom: 6px;
+}
+
+.d-alerts li.flag-red {
+  border-left-color: var(--red);
+}
+
+.d-alerts strong {
+  font-size: 0.9rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.d-alerts span {
+  font-size: 0.78rem;
+  color: var(--text-2);
+}
+
+.d-alerts li.flag-red span {
+  color: var(--red);
+}
+
+.d-dispatch {
+  margin-top: auto;
+  display: grid;
+  gap: 1px;
+  padding: 7px 9px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  font-size: 0.8rem;
+}
+
+.d-dispatch strong {
+  font-size: 0.9rem;
+}
+
+.d-label {
+  font-size: 0.65rem;
+  font-weight: 650;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.d-offline {
+  position: absolute;
+  bottom: 6px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--amber-soft);
+  color: var(--amber);
+  font-size: 0.72rem;
+}
+
+.d-center,
+.d-pair {
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 16px;
+  color: var(--muted);
+}
+
+.d-pair {
+  gap: 8px;
+  color: var(--text);
+}
+
+.d-pair img {
+  width: 36px;
+}
+
+.d-pair h1 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.d-pair p {
+  margin: 0;
+  max-width: 400px;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.d-pair form {
+  display: flex;
+  gap: 8px;
+}
+
+.d-pair input {
+  width: 160px;
+  font-size: 1.1rem;
+  letter-spacing: 0.1em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.d-error {
+  color: var(--red) !important;
+}
+
+/* Mounted the other way up (portrait): stack the two columns */
+@media (orientation: portrait) {
+  .d-body {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
+  }
+
+  .d-col + .d-col {
+    border-left: none;
+    border-top: 1px solid var(--border);
+  }
+}

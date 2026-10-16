@@ -15,6 +15,7 @@ import type {
   PaymentFields,
   ProjectFile,
   ProjectNote,
+  DisplayData,
   Task,
   TaskFields,
   TodayTask,
@@ -59,6 +60,12 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
 }
 
 export const api = {
+  displayData: () => request<DisplayData>('GET', '/display/data'),
+  displayPair: (code: string) => request<void>('POST', '/display/pair', { code }),
+  displayTick: (taskId: number, done: boolean) =>
+    request<void>(done ? 'POST' : 'DELETE', `/display/tasks/${taskId}/done`),
+  pairedDisplays: () => request<{ count: number }>('GET', '/display/paired'),
+  unpairDisplays: () => request<void>('DELETE', '/display/paired'),
   setupNeeded: () => request<{ needed: boolean }>('GET', '/auth/setup'),
   setup: (body: { username: string; display_name: string; password: string }) =>
     request<User>('POST', '/auth/setup', body),

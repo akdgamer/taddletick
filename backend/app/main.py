@@ -9,6 +9,7 @@ from app.routers import (
     clients,
     contacts,
     dashboard,
+    display,
     files,
     google,
     notes,
@@ -34,6 +35,8 @@ app.add_middleware(
 # Login, setup and Google's redirect are open; everything else needs a logged-in user
 app.include_router(auth.router)
 app.include_router(google.callback_router)
+# Checks its own logins: the desk display's limited one, or a person's
+app.include_router(display.router)
 for module in (
     dashboard, projects, stages, stage_types, clients, contacts, payments, files, notes, tasks, google, users
 ):

@@ -1,7 +1,14 @@
 import { useState, type FormEvent } from 'react'
 
 import { api } from '../api/client'
-import { useChangePassword, useGoogleDisconnect, useGoogleStatus, useGoogleSync } from '../api/hooks'
+import {
+  useChangePassword,
+  useGoogleDisconnect,
+  useGoogleStatus,
+  useGoogleSync,
+  usePairedDisplays,
+  useUnpairDisplays,
+} from '../api/hooks'
 import { timeAgo } from '../format'
 import { RestoreIcon } from './Icons'
 import { useToast } from './useToast'
@@ -112,8 +119,50 @@ export function SettingsPage({ googleResult }: { googleResult: string | null }) 
         {sync.error && <p className="error">{sync.error.message}</p>}
       </section>
 
+      <DisplaySection />
       <PasswordSection />
     </main>
+  )
+}
+
+/** The Pi's touch screen shows your tasks and alerts with its own limited login */
+function DisplaySection() {
+  const { data } = usePairedDisplays()
+  const unpair = useUnpairDisplays()
+  const toast = useToast()
+  const paired = (data?.count ?? 0) > 0
+
+  return (
+    <section className="card settings-card">
+      <header className="settings-head">
+        <div>
+          <h2>Desk display</h2>
+          <p className="muted">
+            A small screen showing your tasks for today, projects that need attention and the Pi's health. Its login
+            can only show that page and tick tasks.
+          </p>
+        </div>
+        <span className={`status-badge ${paired ? 'on' : 'off'}`}>{paired ? 'Paired' : 'Not paired'}</span>
+      </header>
+      <div className="connection">
+        <div className="connection-info">
+          <strong>Preview</strong>
+          <a className="muted" href="/?display" target="_blank" rel="noreferrer">
+            Open the display page in a new tab
+          </a>
+        </div>
+        {paired && (
+          <div className="connection-actions">
+            <button
+              className="text-button danger-text"
+              onClick={() => unpair.mutate(undefined, { onSuccess: () => toast({ message: 'Display unpaired' }) })}
+            >
+              Unpair {data?.count === 1 ? 'display' : `${data?.count} displays`}
+            </button>
+          </div>
+        )}
+      </div>
+    </section>
   )
 }
 

@@ -45,7 +45,8 @@ const params = new URLSearchParams(window.location.search)
 const initialPage = (params.get('page') as Page) in PAGES ? (params.get('page') as Page) : 'projects'
 const googleResult = params.get('google')
 const isMac = /Mac|iPhone|iPad/.test(navigator.platform)
-if (window.location.search) window.history.replaceState(null, '', window.location.pathname)
+// (?display is the desk display's address; main.tsx needs to see it)
+if (window.location.search && !params.has('display')) window.history.replaceState(null, '', window.location.pathname)
 
 export default function App() {
   return (

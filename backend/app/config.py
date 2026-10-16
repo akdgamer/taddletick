@@ -26,6 +26,9 @@ class Settings(BaseSettings):
     cookie_secure: bool = False
     session_days: int = 60
 
+    # Nightly database dumps (read-only in the app, for the desk display's "last backup")
+    backup_dir: Path | None = None
+
     # How often the worker pushes changes to Google
     sync_interval_seconds: int = 300
 

@@ -30,12 +30,14 @@ services:
       SYNC_INTERVAL_SECONDS: ${SYNC_INTERVAL_SECONDS:-300}
       # Login cookie only over HTTPS (Tailscale serve). Set false only if you use plain http://
       COOKIE_SECURE: ${COOKIE_SECURE:-true}
+      BACKUP_DIR: /backups
     ports:
       # Only reachable from the Pi itself; Tailscale Serve publishes it to your devices
       - "127.0.0.1:${APP_PORT:-8000}:8000"
     volumes: &app-volumes
       - ${FILES_PATH:?set FILES_PATH in .env}:/data/files
       - ./secrets:/secrets:ro
+      - ${BACKUP_PATH:?set BACKUP_PATH in .env}:/backups:ro # only to show "last backup" on the desk display
 
   worker:
     image: taddletick

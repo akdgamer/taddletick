@@ -1,6 +1,7 @@
 """Shapes of the JSON going in and out of the API (the contract React codes against)."""
 
 from datetime import date, datetime
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -365,3 +366,48 @@ class TodayTask(TaskRead):
     done: bool
     # One-off tasks carried over from an earlier start date
     days_overdue: int
+
+
+# Desk display
+
+class DisplayTask(BaseModel):
+    id: int
+    title: str
+    done: bool
+    days_overdue: int
+    project: str | None
+
+
+class DisplayAlert(BaseModel):
+    project_id: int
+    project: str
+    flag: Flag
+    reason: str
+
+
+class DisplayDispatch(BaseModel):
+    project: str
+    date: date
+    days: int
+
+
+class DisplayHealth(BaseModel):
+    backup_at: datetime | None
+    google: Literal["off", "ok", "error"]
+    google_at: datetime | None
+    temp_c: float | None
+    disk_free_pct: int
+
+
+class DisplayData(BaseModel):
+    name: str
+    today: date
+    tasks: list[DisplayTask]
+    alerts: list[DisplayAlert]
+    next_dispatch: DisplayDispatch | None
+    active_projects: int
+    health: DisplayHealth
+
+
+class PairBody(BaseModel):
+    code: str = Field(min_length=4, max_length=20)

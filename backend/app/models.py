@@ -106,6 +106,20 @@ class UserSession(Base):
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    # "full" for a person's browser; "display" for the desk screen, which may only use /display
+    scope: Mapped[str] = mapped_column(String(20), default="full", server_default="full")
+
+    user: Mapped[User] = relationship(lazy="joined")
+
+
+class DisplayPairing(Base):
+    """A one-time code that turns a browser into a user's desk display (made on the Pi's command line)."""
+
+    __tablename__ = "display_pairings"
+
+    code_hash: Mapped[str] = mapped_column(String(64), primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
 
     user: Mapped[User] = relationship(lazy="joined")
 

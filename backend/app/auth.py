@@ -93,15 +93,16 @@ def _token_hash(token: str) -> str:
     return hashlib.sha256(token.encode()).hexdigest()
 
 
-def start_session(session: Session, response: Response, user: User) -> None:
+def start_session(session: Session, response: Response, user: User, scope: str = "full", days: int | None = None) -> None:
+    days = days or settings.session_days
     token = secrets.token_urlsafe(32)
-    expires = datetime.now(timezone.utc) + timedelta(days=settings.session_days)
-    session.add(UserSession(token_hash=_token_hash(token), user_id=user.id, expires_at=expires))
+    expires = datetime.now(timezone.utc) + timedelta(days=days)
+    session.add(UserSession(token_hash=_token_hash(token), user_id=user.id, expires_at=expires, scope=scope))
     session.commit()
     response.set_cookie(
         COOKIE,
         token,
-        max_age=settings.session_days * 86400,
+        max_age=days * 86400,
         httponly=True,  # page scripts can't read it
         samesite="lax",  # not sent on cross-site POSTs, which blocks CSRF
         secure=settings.cookie_secure,
@@ -119,16 +120,29 @@ def end_session(session: Session, request: Request, response: Response) -> None:
 
 
 def end_all_sessions(session: Session, user_id: int) -> None:
-    session.query(UserSession).filter(UserSession.user_id == user_id).delete()
+    """Every browser of this user (a password change); the desk display stays paired."""
+    session.query(UserSession).filter(UserSession.user_id == user_id, UserSession.scope == "full").delete()
 
 
-def current_user(request: Request, session: Session = Depends(get_session)) -> User:
-    """FastAPI dependency: the logged-in user, or 401."""
+def _valid_session(request: Request, session: Session) -> UserSession:
     token = request.cookies.get(COOKIE)
     record = session.get(UserSession, _token_hash(token)) if token else None
     if record is None or record.expires_at < datetime.now(timezone.utc) or not record.user.is_active:
         raise HTTPException(401, "Not logged in")
+    return record
+
+
+def current_user(request: Request, session: Session = Depends(get_session)) -> User:
+    """FastAPI dependency: the logged-in user, or 401. A desk display's login doesn't count."""
+    record = _valid_session(request, session)
+    if record.scope != "full":
+        raise HTTPException(403, "This login is only for the desk display")
     return record.user
+
+
+def display_user(request: Request, session: Session = Depends(get_session)) -> User:
+    """For /display: a person's login or a paired desk display's."""
+    return _valid_session(request, session).user
 
 
 def require(permission: str):

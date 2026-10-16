@@ -211,6 +211,15 @@ export const useUploadFile = () =>
 
 export const useDeleteFile = () => useProjectMutation((id: number) => api.deleteFile(id))
 
+export const usePairedDisplays = () => useQuery({ queryKey: ['displays'], queryFn: api.pairedDisplays })
+export const useUnpairDisplays = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: api.unpairDisplays,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['displays'] }),
+  })
+}
+
 export const useAddNote = () =>
   useProjectMutation(({ projectId, body }: { projectId: number; body: string }) => api.addNote(projectId, body))
 export const useUpdateNote = () =>

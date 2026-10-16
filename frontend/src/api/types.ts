@@ -229,3 +229,21 @@ export interface DashboardProject extends ProjectFields {
   files: ProjectFile[]
   log: ProjectNote[]
 }
+
+// Desk display (the Pi's touch screen)
+
+export interface DisplayData {
+  name: string
+  today: string
+  tasks: { id: number; title: string; done: boolean; days_overdue: number; project: string | null }[]
+  alerts: { project_id: number; project: string; flag: Flag; reason: string }[]
+  next_dispatch: { project: string; date: string; days: number } | null
+  active_projects: number
+  health: {
+    backup_at: string | null
+    google: 'off' | 'ok' | 'error'
+    google_at: string | null
+    temp_c: number | null
+    disk_free_pct: number
+  }
+}
