@@ -16,6 +16,7 @@ import type {
   ProjectFile,
   ProjectNote,
   DisplayData,
+  ActivityPage,
   Task,
   TaskFields,
   TodayTask,
@@ -60,6 +61,12 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
 }
 
 export const api = {
+  activity: (params: { project_id?: number; user_id?: number; before?: number; limit?: number }) => {
+    const q = new URLSearchParams(
+      Object.entries(params).flatMap(([k, v]) => (v === undefined ? [] : [[k, String(v)]])),
+    )
+    return request<ActivityPage>('GET', `/activity${q.size ? `?${q}` : ''}`)
+  },
   displayData: () => request<DisplayData>('GET', '/display/data'),
   displayPair: (code: string) => request<void>('POST', '/display/pair', { code }),
   displayTick: (taskId: number, done: boolean) =>

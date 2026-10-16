@@ -5,6 +5,7 @@ import type { DashboardProject } from '../api/types'
 import { plural, relativeDays, shortDate } from '../format'
 import { EditProjectForm } from './EditProjectForm'
 import { FilesSection } from './FilesSection'
+import { HistorySection } from './HistorySection'
 import { ChevronIcon, Menu } from './Menu'
 import { NotesSection } from './NotesSection'
 import { PaymentsSection } from './PaymentsSection'
@@ -185,6 +186,7 @@ export function ProjectTile({ project }: { project: DashboardProject }) {
         canUpload={access.can_edit}
         canDelete={access.can_delete}
       />
+      <HistorySection projectId={project.id} />
 
       {error && <p className="error">{error.message}</p>}
     </article>

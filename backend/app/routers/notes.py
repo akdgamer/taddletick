@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from app import auth
+from app import activity, auth
 from app.auth import current_user
 from app.db import get_session
 from app.models import ProjectNote, User
@@ -29,8 +29,10 @@ def add_note(
     project_id: int, body: NoteBody, session: Session = Depends(get_session), user: User = Depends(current_user)
 ):
     auth.check(auth.can_edit(user, get_visible_project(session, project_id, user)))
+    project = get_visible_project(session, project_id, user)
     note = ProjectNote(project_id=project_id, author_id=user.id, body=body.body)
     session.add(note)
+    activity.record(session, user, project, f"added a note: {activity.show(body.body.splitlines()[0])}", kind="note")
     session.commit()
     session.refresh(note)
     return note
@@ -40,6 +42,8 @@ def add_note(
 def edit_note(note_id: int, body: NoteBody, session: Session = Depends(get_session), user: User = Depends(current_user)):
     note = get_note(session, note_id, user)
     auth.check(note.author_id == user.id)
+    if note.body != body.body:
+        activity.record(session, user, note.project, "edited a note", kind="note")
     note.body = body.body
     note.edited_at = datetime.now(timezone.utc)
     session.commit()
@@ -50,5 +54,6 @@ def edit_note(note_id: int, body: NoteBody, session: Session = Depends(get_sessi
 def delete_note(note_id: int, session: Session = Depends(get_session), user: User = Depends(current_user)):
     note = get_note(session, note_id, user)
     auth.check(note.author_id == user.id or auth.can_delete(user, note.project))
+    activity.record(session, user, note.project, "deleted a note", kind="note")
     session.delete(note)
     session.commit()

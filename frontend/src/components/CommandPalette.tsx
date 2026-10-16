@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useCan, useContacts, useDashboard } from '../api/hooks'
 import { sendCommand, type Command } from '../commands'
 
-export type PageName = 'projects' | 'tasks' | 'contacts' | 'users' | 'settings'
+export type PageName = 'projects' | 'tasks' | 'contacts' | 'activity' | 'users' | 'settings'
 
 interface Item {
   id: string
@@ -39,6 +39,7 @@ function Palette({ onClose, onNavigate }: Omit<Props, 'open'>) {
       { id: 'p-projects', group: 'Go to', label: 'Projects', page: 'projects' },
       { id: 'p-tasks', group: 'Go to', label: 'Tasks', page: 'tasks' },
       { id: 'p-contacts', group: 'Go to', label: 'Contacts', page: 'contacts' },
+      { id: 'p-activity', group: 'Go to', label: 'Activity', hint: 'Recent changes', page: 'activity' },
       ...(isAdmin ? [{ id: 'p-users', group: 'Go to', label: 'Users', page: 'users' } as Item] : []),
       { id: 'p-settings', group: 'Go to', label: 'Settings', hint: 'Google sync, password', page: 'settings' },
     ]

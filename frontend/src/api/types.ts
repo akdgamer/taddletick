@@ -247,3 +247,20 @@ export interface DisplayData {
     disk_free_pct: number
   }
 }
+
+// Activity history
+
+export interface ActivityItem {
+  id: number
+  at: string
+  kind: 'project' | 'stage' | 'payment' | 'file' | 'note'
+  summary: string
+  project_id: number | null
+  project_name: string
+  user: UserRef | null
+}
+
+export interface ActivityPage {
+  items: ActivityItem[]
+  next_before: number | null
+}

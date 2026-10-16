@@ -2,10 +2,10 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session, selectinload
 
-from app import auth
+from app import activity, auth
 from app.auth import current_user
 from app.db import get_session
-from app.models import Project, ProjectLabel, ProjectStage, Role, StageType, User
+from app.models import Client, Project, ProjectLabel, ProjectStage, Role, StageType, User
 from app.routers.clients import check_client_exists
 from app.schemas import (
     PaymentRead,
@@ -90,9 +90,38 @@ def create_project(body: ProjectCreate, session: Session = Depends(get_session),
         for i, type_id in enumerate(body.stage_type_ids)
     ]
     session.add(project)
+    session.flush()  # gives it an id for the history line
+    stages = len(body.stage_type_ids)
+    activity.record(session, user, project,
+                    f"created the project with {stages} stage{'s' if stages != 1 else ''}" if stages else "created the project")
     session.commit()
     session.refresh(project)
     return project_read(project, user)
+
+
+PROJECT_LABELS = {"name": "name", "po_number": "PO", "dispatch_date": "dispatch date"}
+
+
+def describe_changes(session: Session, project: Project, changes: dict) -> list[str]:
+    """The history line(s) for a project edit, worked out before the changes are applied."""
+    fields = activity.diff(project, changes, PROJECT_LABELS)
+    if "client_id" in changes and changes["client_id"] != project.client_id:
+        new = session.get(Client, changes["client_id"]) if changes["client_id"] else None
+        fields.append(f"client {project.client.name if project.client else 'none'} → {new.name if new else 'none'}")
+    lines = [f"changed {', '.join(fields)}"] if fields else []
+    if "notes" in changes and changes["notes"] != project.notes:
+        lines.append("edited the description")
+    if "is_p0" in changes and changes["is_p0"] != project.is_p0:
+        lines.append("marked it P0" if changes["is_p0"] else "removed P0")
+    if "is_completed" in changes and changes["is_completed"] != project.is_completed:
+        lines.append("marked it completed" if changes["is_completed"] else "restored it to active")
+    if "label" in changes and changes["label"] != project.label:
+        lines.append("made it personal" if changes["label"] == ProjectLabel.personal else "shared it with the company")
+    if "allowed_role_ids" in changes and sorted(changes["allowed_role_ids"] or []) != sorted(project.allowed_role_ids):
+        ids = changes["allowed_role_ids"] or []
+        names = sorted(r.name for r in session.scalars(select(Role).where(Role.id.in_(ids)))) if ids else []
+        lines.append(f"limited it to {', '.join(names)}" if names else "made it visible to everyone")
+    return lines
 
 
 @router.patch("/{project_id}", response_model=ProjectRead)
@@ -113,6 +142,7 @@ def update_project(
             auth.check(project.owner_id == user.id, "Only the person who created a project can make it personal")
         else:
             auth.check(user.allowed("can_edit"), "Your role can't create company projects")
+    lines = describe_changes(session, project, changes)
     if "allowed_role_ids" in changes:
         project.allowed_roles = load_roles(session, changes.pop("allowed_role_ids") or [], user)
     if new_label == ProjectLabel.personal:
@@ -120,6 +150,8 @@ def update_project(
 
     for field, value in changes.items():
         setattr(project, field, value)
+    if lines:
+        activity.record(session, user, project, "; ".join(lines))
     session.commit()
     session.refresh(project)
     return project_read(project, user)
@@ -131,6 +163,7 @@ def delete_project(project_id: int, session: Session = Depends(get_session), use
 
     project = get_visible_project(session, project_id, user)
     auth.check(auth.can_delete(user, project))
+    activity.record_project_deleted(session, user, project)
     session.delete(project)
     session.commit()
     delete_project_files(project_id)
@@ -153,6 +186,9 @@ def add_stage(
     )
     stage = ProjectStage(project_id=project_id, position=next_position, **body.model_dump())
     session.add(stage)
+    session.flush()
+    session.refresh(stage)
+    activity.record(session, user, project, f"added stage {stage.name}", kind="stage")
     session.commit()
     session.refresh(stage)
     return stage

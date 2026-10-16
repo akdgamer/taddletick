@@ -5,6 +5,7 @@ from fastapi.staticfiles import StaticFiles
 from app.auth import current_user
 from app.config import settings
 from app.routers import (
+    activity,
     auth,
     clients,
     contacts,
@@ -38,7 +39,8 @@ app.include_router(google.callback_router)
 # Checks its own logins: the desk display's limited one, or a person's
 app.include_router(display.router)
 for module in (
-    dashboard, projects, stages, stage_types, clients, contacts, payments, files, notes, tasks, google, users
+    activity, dashboard, projects, stages, stage_types, clients, contacts, payments, files, notes, tasks, google,
+    users,
 ):
     app.include_router(module.router, dependencies=[Depends(current_user)])
 

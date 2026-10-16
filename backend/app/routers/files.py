@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
-from app import auth
+from app import activity, auth
 from app.auth import current_user
 from app.config import settings
 from app.db import get_session
@@ -22,6 +22,10 @@ MAX_UPLOAD_BYTES = 200 * 1024 * 1024  # 200 MB per file
 
 def project_dir(project_id: int) -> Path:
     return settings.files_dir / f"project-{project_id}"
+
+
+def size_text(size: int) -> str:
+    return f"{size / 1024 / 1024:.1f} MB" if size >= 1024 * 1024 else f"{max(1, round(size / 1024))} KB"
 
 
 def safe_name(filename: str) -> str:
@@ -60,6 +64,8 @@ def upload_file(
         size=size,
     )
     session.add(record)
+    activity.record(session, user, get_visible_project(session, project_id, user),
+                    f"uploaded {record.filename} ({size_text(size)})", kind="file")
     session.commit()
     session.refresh(record)
     return record
@@ -87,6 +93,7 @@ def delete_file(file_id: int, session: Session = Depends(get_session), user: Use
     record = get_file_or_404(session, file_id, user)
     auth.check(auth.can_delete(user, record.project))
     (project_dir(record.project_id) / record.stored_name).unlink(missing_ok=True)
+    activity.record(session, user, record.project, f"deleted file {record.filename}", kind="file")
     session.delete(record)
     session.commit()
 

@@ -129,3 +129,24 @@ export const PeopleIcon = () => (
     <path d="M2 21v-1a6 6 0 0 1 12 0v1M16 4a4 4 0 0 1 0 8M22 21v-1a6 6 0 0 0-4-5.6" />
   </Svg>
 )
+
+export const CoinIcon = () => (
+  <Svg>
+    <circle cx="12" cy="12" r="9" />
+    <path d="M14.5 9.5c-.4-.9-1.4-1.5-2.5-1.5-1.5 0-2.5.8-2.5 2s1 1.6 2.5 2 2.5.9 2.5 2-1 2-2.5 2c-1.2 0-2.2-.6-2.6-1.6M12 6.5v11" />
+  </Svg>
+)
+
+export const FileIcon = () => (
+  <Svg>
+    <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8Z" />
+    <path d="M14 3v5h5" />
+  </Svg>
+)
+
+export const NoteIcon = () => (
+  <Svg>
+    <path d="M4 5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v10l-6 6H6a2 2 0 0 1-2-2Z" />
+    <path d="M14 21v-4a2 2 0 0 1 2-2h4M8 8h8M8 12h5" />
+  </Svg>
+)

@@ -411,3 +411,20 @@ class DisplayData(BaseModel):
 
 class PairBody(BaseModel):
     code: str = Field(min_length=4, max_length=20)
+
+
+# Activity history
+
+class ActivityRead(BaseModel):
+    id: int
+    at: datetime
+    kind: str
+    summary: str
+    project_id: int | None
+    project_name: str
+    user: UserRef | None
+
+
+class ActivityPage(BaseModel):
+    items: list[ActivityRead]
+    next_before: int | None  # pass as ?before= for the next page

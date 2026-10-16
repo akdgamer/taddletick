@@ -5,6 +5,7 @@ import { ApiError } from './api/client'
 import { useCan, useLogout, useMe, useSetupNeeded } from './api/hooks'
 import type { User } from './api/types'
 import { initials } from './format'
+import { ActivityPage } from './components/ActivityPage'
 import { CommandPalette, SearchIcon } from './components/CommandPalette'
 import { ContactsPage } from './components/ContactsPage'
 import { DashboardPage } from './components/DashboardPage'
@@ -35,6 +36,7 @@ const PAGES = {
   projects: 'Projects',
   tasks: 'Tasks',
   contacts: 'Contacts',
+  activity: 'Activity',
   users: 'Users',
   settings: 'Settings',
 } as const
@@ -156,6 +158,7 @@ function Shell({ user }: { user: User }) {
       {page === 'projects' && <DashboardPage />}
       {page === 'tasks' && <TasksPage />}
       {page === 'contacts' && <ContactsPage />}
+      {page === 'activity' && <ActivityPage />}
       {page === 'users' && isAdmin && <UsersPage />}
       {page === 'settings' && <SettingsPage googleResult={googleResult} />}
       <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} onNavigate={setPage} />

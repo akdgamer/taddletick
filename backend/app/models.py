@@ -309,6 +309,26 @@ class ProjectNote(Base):
     author: Mapped[User | None] = relationship(lazy="joined")
 
 
+class Activity(Base):
+    """One line of history: who changed what on which project, written as a sentence."""
+
+    __tablename__ = "activity"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
+    # NULL once the project is deleted; the name is kept so the "deleted" line still reads well
+    project_id: Mapped[int | None] = mapped_column(ForeignKey("projects.id", ondelete="SET NULL"), index=True)
+    project_name: Mapped[str] = mapped_column(String(200))
+    kind: Mapped[str] = mapped_column(String(20))  # project, stage, payment, file, note
+    summary: Mapped[str] = mapped_column(Text)
+    # Payment lines: only for roles that may see payments
+    sensitive: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
+
+    user: Mapped[User | None] = relationship(lazy="joined")
+    project: Mapped["Project | None"] = relationship(lazy="joined")
+
+
 class Recurrence(str, enum.Enum):
     none = "none"  # one-off: shows from its start date until done
     daily = "daily"

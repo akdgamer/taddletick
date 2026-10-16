@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app import auth, urgency
+from app import activity, auth, urgency
 from app.auth import current_user
 from app.db import get_session
 from app.models import Payment, User
@@ -30,13 +30,25 @@ def get_payment_or_404(session: Session, payment_id: int, user: User) -> Payment
     return payment
 
 
+PAYMENT_LABELS = {
+    "label": "name",
+    "expected_amount": "amount",
+    "due_date": "due date",
+    "received_amount": "received",
+    "received_date": "received on",
+}
+
 @router.post("/projects/{project_id}/payments", response_model=PaymentRead, status_code=201)
 def add_payment(
     project_id: int, body: PaymentCreate, session: Session = Depends(get_session), user: User = Depends(current_user)
 ):
     auth.check(auth.can_edit_payments(user, get_visible_project(session, project_id, user)))
+    project = get_visible_project(session, project_id, user)
     payment = Payment(project_id=project_id, **body.model_dump())
     session.add(payment)
+    due = f" due {activity.show(payment.due_date)}" if payment.due_date else ""
+    activity.record(session, user, project, f"added payment {payment.label} ({activity.money(payment.expected_amount)}{due})",
+                    kind="payment", sensitive=True)
     session.commit()
     session.refresh(payment)
     return payment
@@ -48,8 +60,19 @@ def update_payment(
 ):
     payment = get_payment_or_404(session, payment_id, user)
     auth.check(auth.can_edit_payments(user, payment.project))
-    for field, value in body.model_dump(exclude_unset=True).items():
+    changes = body.model_dump(exclude_unset=True)
+    was_paid, name = payment.is_paid, payment.label
+    lines = activity.diff(payment, changes, PAYMENT_LABELS)
+    if "notes" in changes and changes["notes"] != payment.notes:
+        lines.append("edited its notes")
+    for field, value in changes.items():
         setattr(payment, field, value)
+    if payment.is_paid and not was_paid:
+        summary = f"marked payment {name} received ({activity.money(payment.received_amount)})"
+    else:
+        summary = f"changed payment {name}: {'; '.join(lines)}" if lines else ""
+    if summary:
+        activity.record(session, user, payment.project, summary, kind="payment", sensitive=True)
     session.commit()
     session.refresh(payment)
     return payment
@@ -59,6 +82,7 @@ def update_payment(
 def delete_payment(payment_id: int, session: Session = Depends(get_session), user: User = Depends(current_user)):
     payment = get_payment_or_404(session, payment_id, user)
     auth.check(auth.can_edit_payments(user, payment.project) and auth.can_delete(user, payment.project))
+    activity.record(session, user, payment.project, f"deleted payment {payment.label}", kind="payment", sensitive=True)
     session.delete(payment)
     session.commit()
 

@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 import { api } from './client'
 import type {
@@ -29,6 +29,7 @@ const keys = {
   payments: ['payments'] as const,
   tasks: ['tasks'] as const,
   google: ['google'] as const,
+  activity: ['activity'] as const,
 }
 
 // --- Login -------------------------------------------------------------------
@@ -70,7 +71,8 @@ export const useChangePassword = () =>
 
 // --- Users and roles (admin page) ----------------------------------------------
 
-export const useUsers = () => useQuery({ queryKey: keys.users, queryFn: api.users })
+// Admins only: the list isn't fetched for anyone else (it would just 403)
+export const useUsers = (enabled = true) => useQuery({ queryKey: keys.users, queryFn: api.users, enabled })
 export const useRoles = () => useQuery({ queryKey: keys.roles, queryFn: api.roles })
 
 function useAdminMutation<TArgs, TResult>(fn: (args: TArgs) => Promise<TResult>) {
@@ -122,7 +124,9 @@ function useProjectMutation<TArgs, TResult>(fn: (args: TArgs) => Promise<TResult
     mutationFn: fn,
     onSuccess: () =>
       Promise.all(
-        [keys.dashboard, keys.projects, keys.payments].map((queryKey) => queryClient.invalidateQueries({ queryKey })),
+        [keys.dashboard, keys.projects, keys.payments, keys.activity].map((queryKey) =>
+          queryClient.invalidateQueries({ queryKey }),
+        ),
       ),
   })
 }
@@ -210,6 +214,16 @@ export const useUploadFile = () =>
   useProjectMutation(({ projectId, file }: { projectId: number; file: File }) => api.uploadFile(projectId, file))
 
 export const useDeleteFile = () => useProjectMutation((id: number) => api.deleteFile(id))
+
+/** Newest first, a page at a time; every project change refetches it (see useProjectMutation) */
+export const useActivity = (filter: { project_id?: number; user_id?: number }, enabled = true) =>
+  useInfiniteQuery({
+    queryKey: [...keys.activity, filter],
+    queryFn: ({ pageParam }) => api.activity({ ...filter, before: pageParam, limit: 30 }),
+    initialPageParam: undefined as number | undefined,
+    getNextPageParam: (last) => last.next_before ?? undefined,
+    enabled,
+  })
 
 export const usePairedDisplays = () => useQuery({ queryKey: ['displays'], queryFn: api.pairedDisplays })
 export const useUnpairDisplays = () => {
