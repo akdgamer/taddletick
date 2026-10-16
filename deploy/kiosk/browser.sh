@@ -26,4 +26,4 @@ exec chromium \
   --overscroll-history-navigation=0 --disable-pinch \
   --check-for-update-interval=31536000 \
   --disable-gpu \
-  --force-device-scale-factor=0.9  # Chromium won't make a window under ~500px; 480px / 0.9 = 533 fits
+  --force-device-scale-factor=0.95  # Chromium won't make a window under ~500px; 480px / 0.95 = 505 fits
