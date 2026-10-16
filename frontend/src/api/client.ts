@@ -138,6 +138,8 @@ export const api = {
     return (await check(response)).json() as Promise<ProjectFile>
   },
   fileUrl: (id: number) => `${API_URL}/files/${id}`,
+  fileDownloadUrl: (id: number) => `${API_URL}/files/${id}?download=1`,
+  fileThumbnailUrl: (id: number) => `${API_URL}/files/${id}/thumbnail`,
   deleteFile: (id: number) => request<void>('DELETE', `/files/${id}`),
 
   addNote: (projectId: number, body: string) => request<ProjectNote>('POST', `/projects/${projectId}/notes`, { body }),

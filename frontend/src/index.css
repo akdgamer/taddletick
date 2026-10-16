@@ -3151,3 +3151,267 @@ kbd {
     opacity: 0.45;
   }
 }
+
+/* ---------- Files: grid of cards with thumbnails ---------- */
+
+.file-grid {
+  list-style: none;
+  margin: 2px 0 10px;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
+  gap: 8px;
+}
+
+.file-card {
+  position: relative;
+}
+
+.file-open {
+  display: grid;
+  gap: 2px;
+  width: 100%;
+  height: auto;
+  padding: 0 0 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  overflow: hidden;
+  text-align: left;
+  justify-content: stretch;
+  font-weight: 400;
+  white-space: normal;
+}
+
+.file-open:hover {
+  border-color: var(--border-strong);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.file-thumb {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 4 / 3;
+  margin-bottom: 4px;
+  background: var(--surface-2);
+  overflow: hidden;
+}
+
+.file-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.file-badge {
+  align-content: center;
+  gap: 4px;
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+.file-badge svg {
+  width: 26px;
+  height: 26px;
+}
+
+.file-badge.tone-red { color: var(--red); background: var(--red-soft); }
+.file-badge.tone-green { color: var(--green); background: var(--green-soft); }
+.file-badge.tone-amber { color: var(--amber); background: var(--amber-soft); }
+.file-badge.tone-accent { color: var(--accent); background: var(--accent-soft); }
+
+.file-name {
+  padding: 0 8px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.file-size {
+  padding: 0 8px;
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+
+/* Delete sits on the card's corner, shown on hover */
+.file-card > .action-icon {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  opacity: 0;
+}
+
+.file-card:hover > .action-icon,
+.file-card > .action-icon:focus-visible {
+  opacity: 1;
+}
+
+@media (hover: none) {
+  .file-card > .action-icon {
+    opacity: 1;
+  }
+}
+
+/* ---------- File viewer ---------- */
+
+.viewer {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: flex;
+  flex-direction: column;
+  background: rgb(10 12 16 / 0.94);
+  color: #f2f2f4;
+  animation: fade-up 0.15s ease-out;
+}
+
+.viewer-bar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  border-bottom: 1px solid rgb(255 255 255 / 0.08);
+}
+
+.viewer-title {
+  display: grid;
+  min-width: 0;
+}
+
+.viewer-title strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.viewer-title span {
+  color: rgb(255 255 255 / 0.55);
+  font-size: 0.8rem;
+}
+
+.viewer-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.viewer-actions .button:not(.primary) {
+  border-color: rgb(255 255 255 / 0.2);
+  background: transparent;
+  color: inherit;
+}
+
+.viewer-close {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: inherit;
+}
+
+.viewer-close:hover,
+.viewer-actions .button:not(.primary):hover {
+  background: rgb(255 255 255 / 0.1);
+}
+
+.viewer-stage {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  place-items: center;
+  padding: 16px 64px;
+}
+
+.viewer-image,
+.viewer-media {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  border-radius: 4px;
+  box-shadow: 0 10px 40px rgb(0 0 0 / 0.5);
+}
+
+.viewer-frame {
+  width: min(1100px, 100%);
+  height: 100%;
+  border: none;
+  border-radius: 4px;
+  background: #fff;
+}
+
+.viewer-text {
+  width: min(1000px, 100%);
+  max-height: 100%;
+  margin: 0;
+  padding: 16px 18px;
+  overflow: auto;
+  border-radius: 6px;
+  background: #16181d;
+  color: #e7e7ea;
+  font: 0.85rem/1.55 ui-monospace, SFMono-Regular, Menlo, monospace;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.viewer-none {
+  display: grid;
+  justify-items: center;
+  gap: 14px;
+  color: rgb(255 255 255 / 0.7);
+}
+
+.viewer-nav {
+  position: absolute;
+  top: 50%;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: rgb(255 255 255 / 0.1);
+  color: #fff;
+  transform: translateY(-50%);
+}
+
+.viewer-nav:hover {
+  background: rgb(255 255 255 / 0.2);
+}
+
+.viewer-nav.prev { left: 12px; }
+.viewer-nav.next { right: 12px; }
+
+.viewer-nav svg {
+  width: 16px;
+  height: 16px;
+}
+
+@media (max-width: 640px) {
+  .viewer-stage {
+    padding: 8px;
+  }
+
+  /* Kept on phones: iPhone shows only a PDF's first page inside the viewer, a new tab shows all of it */
+  .viewer-actions .button {
+    height: 30px;
+    padding: 0 10px;
+    font-size: 0.8rem;
+  }
+
+  .viewer-nav {
+    top: auto;
+    bottom: 12px;
+    transform: none;
+  }
+}
