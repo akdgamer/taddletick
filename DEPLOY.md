@@ -55,9 +55,10 @@ mkdir -p /mnt/nas/taddletick/files /mnt/nas/taddletick/backups
 
 Replace `NAS_IP`, `NAS_USER` and `NAS_PASSWORD`.
 
-> **Your NAS uses RAID 0.** RAID 0 has no redundancy: if either disk fails, every
-> file on it is gone, including these backups. Copy `/mnt/nas/taddletick` to a
-> second place (USB drive, another machine, cloud) regularly.
+> **RAID 1 is not a backup.** The NAS mirrors two disks, so one disk dying loses
+> nothing. But a deleted or corrupted file is deleted or corrupted on both disks at
+> once, and a NAS failure, theft or power surge takes both. Copy `/mnt/nas/taddletick`
+> to a second place (USB drive, another machine, cloud) regularly.
 
 ## 4. Get the code and configure it
 
