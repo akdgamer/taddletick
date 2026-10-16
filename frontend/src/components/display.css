@@ -302,3 +302,12 @@
     border-top: 1px solid var(--border);
   }
 }
+
+/* The SPI panel redraws only a few times a second: every animation frame costs, so none at all */
+.display *,
+.display *::before,
+.display *::after {
+  animation: none !important;
+  transition: none !important;
+  scroll-behavior: auto !important;
+}

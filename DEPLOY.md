@@ -166,10 +166,11 @@ has a driver. Add to `/boot/firmware/config.txt` and reboot:
 
 ```
 dtparam=spi=on
-dtoverlay=piscreen,drm,speed=16000000
+dtoverlay=piscreen,drm,speed=32000000
 ```
 
-The screen turns black with a text console. Then install the kiosk and pair it as your
+The screen turns black with a text console. (32 MHz keeps it responsive; if you see
+flicker or garbled pixels, use 24000000.) Then install the kiosk and pair it as your
 account's display (its login can only show the display page and tick tasks):
 
 ```sh
