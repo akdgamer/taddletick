@@ -43,17 +43,26 @@ exact name is shown under **DNS → Tailnet name**).
 In OMV, create a shared folder (e.g. `taddletick`) and an SMB share for it, with a
 user that can read and write. Then on the Pi:
 
+Create the OMV user under **Users → Users** in OMV itself (that also sets its SMB
+password), and give it Read/Write on the shared folder. Then on the Pi, save the
+login in a file only root can read:
+
 ```sh
 sudo apt install -y cifs-utils
-sudo mkdir -p /mnt/nas
-printf 'username=NAS_USER\npassword=NAS_PASSWORD\n' | sudo tee /root/.nas-credentials >/dev/null
+sudo nano /root/.nas-credentials   # two lines: username=NAS_USER and password=NAS_PASSWORD
 sudo chmod 600 /root/.nas-credentials
-echo '//NAS_IP/taddletick /mnt/nas cifs credentials=/root/.nas-credentials,uid=1000,gid=1000,iocharset=utf8,_netdev,x-systemd.automount 0 0' | sudo tee -a /etc/fstab
-sudo systemctl daemon-reload && sudo mount -a
+```
+
+Mount the share at `/mnt/nas/taddletick` (reconnects by itself after a reboot):
+
+```sh
+sudo mkdir -p /mnt/nas/taddletick
+echo '//NAS_IP/taddletick /mnt/nas/taddletick cifs credentials=/root/.nas-credentials,uid=1000,gid=1000,iocharset=utf8,_netdev,nofail,x-systemd.automount 0 0' | sudo tee -a /etc/fstab
+sudo systemctl daemon-reload && sudo systemctl restart remote-fs.target
 mkdir -p /mnt/nas/taddletick/files /mnt/nas/taddletick/backups
 ```
 
-Replace `NAS_IP`, `NAS_USER` and `NAS_PASSWORD`.
+Replace `NAS_IP`. Check it with `df -h /mnt/nas/taddletick`.
 
 > **RAID 1 is not a backup.** The NAS mirrors two disks, so one disk dying loses
 > nothing. But a deleted or corrupted file is deleted or corrupted on both disks at
