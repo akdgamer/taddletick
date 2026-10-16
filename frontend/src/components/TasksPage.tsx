@@ -3,7 +3,10 @@ import { useState, type FormEvent } from 'react'
 import { useCreateTask, useDashboard, useDeleteTask, useTasks, useUpdateTask } from '../api/hooks'
 import type { Recurrence, Task, TaskFields } from '../api/types'
 import { formatDate, todayIso } from '../format'
-import { ArchiveIcon, EditIcon, IconButton, TrashIcon } from './Icons'
+import { useCommand } from '../commands'
+import { ArchiveIcon, EditIcon, IconButton, ListCheckIcon, TrashIcon } from './Icons'
+import { EmptyState, SkeletonRows } from './Placeholders'
+import { afterSave, useToast } from './useToast'
 
 const RECURRENCE_LABELS: Record<Recurrence, string> = {
   daily: 'Every day',
@@ -24,6 +27,7 @@ function describe(task: Task): string {
 export function TasksPage() {
   const { data: tasks = [], isPending } = useTasks()
   const [adding, setAdding] = useState(false)
+  useCommand((command) => command.type === 'new-task' && setAdding(true))
 
   return (
     <main className="page narrow">
@@ -43,8 +47,20 @@ export function TasksPage() {
           <TaskForm onDone={() => setAdding(false)} />
         </section>
       )}
-      {isPending && <p className="muted">Loading…</p>}
-      {!isPending && tasks.length === 0 && <p className="muted">No tasks yet.</p>}
+      {isPending && <SkeletonRows />}
+      {!isPending && tasks.length === 0 && !adding && (
+        <EmptyState
+          icon={<ListCheckIcon />}
+          title="No tasks yet"
+          action={
+            <button className="primary" onClick={() => setAdding(true)}>
+              New task
+            </button>
+          }
+        >
+          Daily checks, weekly reviews, one-off reminders: they appear on the dashboard on the right days.
+        </EmptyState>
+      )}
       {tasks.length > 0 && (
         <ul className="contact-list card">
           {tasks.map((t) => (
@@ -59,6 +75,7 @@ export function TasksPage() {
 function TaskItem({ task }: { task: Task }) {
   const updateTask = useUpdateTask()
   const deleteTask = useDeleteTask()
+  const toast = useToast()
   const [editing, setEditing] = useState(false)
 
   if (editing) {
@@ -84,9 +101,21 @@ function TaskItem({ task }: { task: Task }) {
           label="Archive task"
           tone="warn"
           icon={<ArchiveIcon />}
-          onClick={() => updateTask.mutate({ id: task.id, body: { is_archived: true } })}
+          onClick={() =>
+            afterSave(updateTask.mutateAsync({ id: task.id, body: { is_archived: true } }), () =>
+              toast({
+                message: `${task.title} archived`,
+                action: { label: 'Undo', run: () => updateTask.mutate({ id: task.id, body: { is_archived: false } }) },
+              }),
+            )
+          }
         />
-        <IconButton label="Delete task" tone="danger" icon={<TrashIcon />} onClick={() => deleteTask.mutate(task.id)} />
+        <IconButton
+          label="Delete task"
+          tone="danger"
+          icon={<TrashIcon />}
+          onClick={() => afterSave(deleteTask.mutateAsync(task.id), () => toast({ message: `${task.title} deleted` }))}
+        />
       </div>
     </li>
   )

@@ -12,8 +12,11 @@ import {
   useUpdateContact,
 } from '../api/hooks'
 import type { Client, ClientFields, Contact, ContactFields } from '../api/types'
+import { useCommand } from '../commands'
 import { EditIcon, IconButton, TrashIcon } from './Icons'
+import { SkeletonRows } from './Placeholders'
 import { ContactCard } from './Stakeholders'
+import { afterSave, useToast } from './useToast'
 
 const EMPTY_CLIENT: ClientFields = { name: '', address: '', notes: '' }
 const emptyContact = (client_id: number | null): ContactFields => ({
@@ -31,6 +34,7 @@ export function ContactsPage() {
   const [search, setSearch] = useState('')
   const [adding, setAdding] = useState<'client' | 'contact' | null>(null)
   const canEdit = useCan('can_edit')
+  useCommand((command) => command.type === 'search-contacts' && setSearch(command.q))
 
   const noCompany = allContacts.filter((c) => c.client === null)
 
@@ -70,7 +74,7 @@ export function ContactsPage() {
         </section>
       )}
 
-      {isPending && <p className="muted">Loading…</p>}
+      {isPending && <SkeletonRows />}
       {error && <p className="error">Couldn't load contacts: {error.message}</p>}
 
       {search.trim() ? (
@@ -109,6 +113,7 @@ function SearchResults({ q }: { q: string }) {
 
 function ClientSection({ client }: { client: Client }) {
   const deleteClient = useDeleteClient()
+  const toast = useToast()
   const canEdit = useCan('can_edit')
   const canDelete = useCan('can_delete')
   const [editing, setEditing] = useState(false)
@@ -133,7 +138,12 @@ function ClientSection({ client }: { client: Client }) {
             {canDelete &&
               (confirmingDelete ? (
                 <>
-                  <button className="danger" onClick={() => deleteClient.mutate(client.id)}>
+                  <button
+                    className="danger"
+                    onClick={() =>
+                      afterSave(deleteClient.mutateAsync(client.id), () => toast({ message: `${client.name} deleted` }))
+                    }
+                  >
                     Confirm delete
                   </button>
                   <button onClick={() => setConfirmingDelete(false)}>Cancel</button>
@@ -174,6 +184,7 @@ function ContactList({ contacts }: { contacts: Contact[] }) {
 
 function ContactItem({ contact }: { contact: Contact }) {
   const deleteContact = useDeleteContact()
+  const toast = useToast()
   const canEdit = useCan('can_edit')
   const canDelete = useCan('can_delete')
   const [editing, setEditing] = useState(false)
@@ -197,7 +208,12 @@ function ContactItem({ contact }: { contact: Contact }) {
         {canDelete &&
           (confirmingDelete ? (
             <>
-              <button className="danger" onClick={() => deleteContact.mutate(contact.id)}>
+              <button
+                className="danger"
+                onClick={() =>
+                  afterSave(deleteContact.mutateAsync(contact.id), () => toast({ message: `${contact.name} deleted` }))
+                }
+              >
                 Confirm delete
               </button>
               <button onClick={() => setConfirmingDelete(false)}>Cancel</button>

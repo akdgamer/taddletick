@@ -110,3 +110,22 @@ export const XIcon = () => (
     <path d="M18 6 6 18M6 6l12 12" />
   </Svg>
 )
+
+export const FolderIcon = () => (
+  <Svg>
+    <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z" />
+  </Svg>
+)
+
+export const ListCheckIcon = () => (
+  <Svg>
+    <path d="m3 7 2 2 4-4M3 17l2 2 4-4M13 6h8M13 12h8M13 18h8" />
+  </Svg>
+)
+
+export const PeopleIcon = () => (
+  <Svg>
+    <circle cx="9" cy="8" r="4" />
+    <path d="M2 21v-1a6 6 0 0 1 12 0v1M16 4a4 4 0 0 1 0 8M22 21v-1a6 6 0 0 0-4-5.6" />
+  </Svg>
+)

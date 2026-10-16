@@ -1,10 +1,13 @@
 import { Fragment, useState } from 'react'
 
 import { useDashboard } from '../api/hooks'
+import { revealProject, useCommand } from '../commands'
 import { plural } from '../format'
 import { CompletedList } from './CompletedList'
 import { ChasePanel, TodayPanel } from './DashboardPanels'
+import { FolderIcon } from './Icons'
 import { NewProjectForm } from './NewProjectForm'
+import { EmptyState, SkeletonTiles } from './Placeholders'
 import { ProjectTile } from './ProjectTile'
 
 type View = 'active' | 'completed'
@@ -12,6 +15,17 @@ type View = 'active' | 'completed'
 export function DashboardPage() {
   const [view, setView] = useState<View>('active')
   const [creating, setCreating] = useState(false)
+
+  useCommand((command) => {
+    if (command.type === 'new-project') {
+      setView('active')
+      setCreating(true)
+    } else if (command.type === 'show-project') {
+      setView('active')
+      // Wait a frame in case the active list is only now rendering
+      requestAnimationFrame(() => revealProject(command.id))
+    }
+  })
 
   return (
     <main className="page">
@@ -43,7 +57,7 @@ export function DashboardPage() {
             <TodayPanel />
             <ChasePanel />
           </div>
-          <ActiveProjects hideEmptyMessage={creating} />
+          <ActiveProjects hideEmptyMessage={creating} onCreate={() => setCreating(true)} />
         </>
       ) : (
         <CompletedList />
@@ -52,15 +66,25 @@ export function DashboardPage() {
   )
 }
 
-function ActiveProjects({ hideEmptyMessage }: { hideEmptyMessage: boolean }) {
+function ActiveProjects({ hideEmptyMessage, onCreate }: { hideEmptyMessage: boolean; onCreate: () => void }) {
   const { data: projects, isPending, error } = useDashboard()
 
   return (
     <>
-      {isPending && <p className="muted">Loading…</p>}
+      {isPending && <SkeletonTiles />}
       {error && <p className="error">Couldn't load the dashboard: {error.message}. Is the API running?</p>}
       {projects?.length === 0 && !hideEmptyMessage && (
-        <p className="muted">No active projects. Create one to get started.</p>
+        <EmptyState
+          icon={<FolderIcon />}
+          title="No active projects"
+          action={
+            <button className="primary" onClick={onCreate}>
+              New project
+            </button>
+          }
+        >
+          Add a machine build or a personal project to start tracking its stages and deadlines.
+        </EmptyState>
       )}
 
       <section className="tiles">

@@ -1,9 +1,10 @@
 import { QueryCache, QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import { ApiError } from './api/client'
 import { useCan, useLogout, useMe, useSetupNeeded } from './api/hooks'
 import type { User } from './api/types'
+import { CommandPalette, SearchIcon } from './components/CommandPalette'
 import { ContactsPage } from './components/ContactsPage'
 import { DashboardPage } from './components/DashboardPage'
 import { LoginPage, SetupPage } from './components/LoginPage'
@@ -11,6 +12,7 @@ import { Menu } from './components/Menu'
 import { SettingsPage } from './components/SettingsPage'
 import { TasksPage } from './components/TasksPage'
 import { ThemeToggle } from './components/ThemeToggle'
+import { ToastProvider } from './components/Toast'
 import { UsersPage } from './components/UsersPage'
 
 const queryClient: QueryClient = new QueryClient({
@@ -41,12 +43,15 @@ type Page = keyof typeof PAGES
 const params = new URLSearchParams(window.location.search)
 const initialPage = (params.get('page') as Page) in PAGES ? (params.get('page') as Page) : 'projects'
 const googleResult = params.get('google')
+const isMac = /Mac|iPhone|iPad/.test(navigator.platform)
 if (window.location.search) window.history.replaceState(null, '', window.location.pathname)
 
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthGate />
+      <ToastProvider>
+        <AuthGate />
+      </ToastProvider>
     </QueryClientProvider>
   )
 }
@@ -69,6 +74,19 @@ function Shell({ user }: { user: User }) {
   const isAdmin = useCan('is_admin')
   const logout = useLogout()
   const [page, setPage] = useState<Page>(initialPage === 'users' && !isAdmin ? 'projects' : initialPage)
+  const [paletteOpen, setPaletteOpen] = useState(false)
+
+  // ⌘K / Ctrl+K anywhere opens the palette; pressing it again closes it
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault()
+        setPaletteOpen((open) => !open)
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
   // Settings lives in the user menu; the tabs are the everyday pages
   const tabs = (Object.keys(PAGES) as Page[]).filter((p) => p !== 'settings' && (p !== 'users' || isAdmin))
   const initials = user.display_name
@@ -93,6 +111,11 @@ function Shell({ user }: { user: User }) {
               </button>
             ))}
           </div>
+          <button className="search-trigger" onClick={() => setPaletteOpen(true)} aria-label="Search (⌘K)">
+            <SearchIcon />
+            <span className="search-trigger-text">Search…</span>
+            <kbd>{isMac ? '⌘K' : 'Ctrl K'}</kbd>
+          </button>
           <Menu
             label="Account"
             triggerClassName="avatar-button"
@@ -139,6 +162,7 @@ function Shell({ user }: { user: User }) {
       {page === 'contacts' && <ContactsPage />}
       {page === 'users' && isAdmin && <UsersPage />}
       {page === 'settings' && <SettingsPage googleResult={googleResult} />}
+      <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} onNavigate={setPage} />
     </>
   )
 }

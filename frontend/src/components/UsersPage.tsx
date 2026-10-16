@@ -12,6 +12,8 @@ import {
 } from '../api/hooks'
 import type { Role, RoleFields, User } from '../api/types'
 import { IconButton, KeyIcon, TrashIcon, UserOffIcon, UserOnIcon } from './Icons'
+import { SkeletonRows } from './Placeholders'
+import { useToast } from './useToast'
 
 const FLAGS: {
   key: keyof Omit<RoleFields, 'name'>
@@ -76,7 +78,7 @@ function PeopleSection() {
         visible to the person who created them.
       </p>
       {adding && <NewUserForm onDone={() => setAdding(false)} />}
-      {isPending && <p className="muted">Loading…</p>}
+      {isPending && <SkeletonRows />}
       <ul className="contact-list">
         {users.map((u) => (
           <UserRow key={u.id} user={u} />
@@ -168,6 +170,7 @@ function UserRow({ user }: { user: User }) {
   const { data: me } = useMe()
   const { data: roles = [] } = useRoles()
   const updateUser = useUpdateUser()
+  const toast = useToast()
   const [resetting, setResetting] = useState(false)
   const [password, setPassword] = useState('')
   const isMe = me?.id === user.id
@@ -198,6 +201,7 @@ function UserRow({ user }: { user: User }) {
                 update({ password }, () => {
                   setResetting(false)
                   setPassword('')
+                  toast({ message: `Password reset for ${user.display_name}` })
                 })
               }
             >
@@ -231,7 +235,14 @@ function UserRow({ user }: { user: User }) {
               label="Deactivate"
               tone="danger"
               icon={<UserOffIcon />}
-              onClick={() => update({ is_active: false })}
+              onClick={() =>
+                update({ is_active: false }, () =>
+                  toast({
+                    message: `${user.display_name} can no longer log in`,
+                    action: { label: 'Undo', run: () => update({ is_active: true }) },
+                  }),
+                )
+              }
             />
           ) : (
             <IconButton label="Reactivate" tone="ok" icon={<UserOnIcon />} onClick={() => update({ is_active: true })} />

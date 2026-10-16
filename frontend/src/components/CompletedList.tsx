@@ -4,11 +4,13 @@ import { useCompletedProjects, useDeleteProject, useUpdateProject } from '../api
 import type { Project } from '../api/types'
 import { formatDate } from '../format'
 import { IconButton, RestoreIcon, TrashIcon } from './Icons'
+import { SkeletonRows } from './Placeholders'
+import { afterSave, useToast } from './useToast'
 
 export function CompletedList() {
   const { data: projects, isPending, error } = useCompletedProjects()
 
-  if (isPending) return <p className="muted">Loading…</p>
+  if (isPending) return <SkeletonRows />
   if (error) return <p className="error">Couldn't load completed projects: {error.message}</p>
   if (projects.length === 0) return <p className="muted">No completed projects yet.</p>
 
@@ -24,6 +26,7 @@ export function CompletedList() {
 function CompletedRow({ project }: { project: Project }) {
   const updateProject = useUpdateProject()
   const deleteProject = useDeleteProject()
+  const toast = useToast()
   const [confirmingDelete, setConfirmingDelete] = useState(false)
   const error = updateProject.error ?? deleteProject.error
 
@@ -47,13 +50,22 @@ function CompletedRow({ project }: { project: Project }) {
             label="Restore"
             tone="ok"
             icon={<RestoreIcon />}
-            onClick={() => updateProject.mutate({ id: project.id, body: { is_completed: false } })}
+            onClick={() =>
+              afterSave(updateProject.mutateAsync({ id: project.id, body: { is_completed: false } }), () =>
+                toast({ message: `${project.name} is active again` }),
+              )
+            }
           />
         )}
         {project.access.can_delete &&
           (confirmingDelete ? (
             <>
-              <button className="danger" onClick={() => deleteProject.mutate(project.id)}>
+              <button
+                className="danger"
+                onClick={() =>
+                  afterSave(deleteProject.mutateAsync(project.id), () => toast({ message: `${project.name} deleted` }))
+                }
+              >
                 Confirm delete
               </button>
               <button onClick={() => setConfirmingDelete(false)}>Cancel</button>

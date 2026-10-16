@@ -8,12 +8,14 @@ import { FilesSection } from './FilesSection'
 import { ChevronIcon, Menu } from './Menu'
 import { PaymentsSection } from './PaymentsSection'
 import { StageRow } from './StageRow'
+import { afterSave, useToast } from './useToast'
 
 export function ProjectTile({ project }: { project: DashboardProject }) {
   const { data: stageTypes = [] } = useStageTypes()
   const updateProject = useUpdateProject()
   const deleteProject = useDeleteProject()
   const addStage = useAddStage()
+  const toast = useToast()
   const [confirmingDelete, setConfirmingDelete] = useState(false)
   const [editing, setEditing] = useState(false)
   const [showDone, setShowDone] = useState(false)
@@ -29,7 +31,7 @@ export function ProjectTile({ project }: { project: DashboardProject }) {
   const stageProps = { canEdit: access.can_edit, canDelete: access.can_delete }
 
   return (
-    <article className={`tile flag-${project.flag}`} aria-label={project.name}>
+    <article id={`project-${project.id}`} className={`tile flag-${project.flag}`} aria-label={project.name}>
       {editing ? (
         <EditProjectForm project={project} onDone={() => setEditing(false)} />
       ) : (
@@ -75,7 +77,15 @@ export function ProjectTile({ project }: { project: DashboardProject }) {
                       <button
                         role="menuitem"
                         onClick={() => {
-                          updateProject.mutate({ id: project.id, body: { is_completed: true } })
+                          afterSave(updateProject.mutateAsync({ id: project.id, body: { is_completed: true } }), () =>
+                            toast({
+                              message: `${project.name} moved to Completed`,
+                              action: {
+                                label: 'Undo',
+                                run: () => updateProject.mutate({ id: project.id, body: { is_completed: false } }),
+                              },
+                            }),
+                          )
                           close()
                         }}
                       >
@@ -105,7 +115,12 @@ export function ProjectTile({ project }: { project: DashboardProject }) {
       {confirmingDelete && (
         <div className="confirm-bar" role="alert">
           <span>Delete this project, its stages, payments and files?</span>
-          <button className="danger" onClick={() => deleteProject.mutate(project.id)}>
+          <button
+            className="danger"
+            onClick={() =>
+              afterSave(deleteProject.mutateAsync(project.id), () => toast({ message: `${project.name} deleted` }))
+            }
+          >
             Delete
           </button>
           <button onClick={() => setConfirmingDelete(false)}>Cancel</button>
@@ -113,6 +128,7 @@ export function ProjectTile({ project }: { project: DashboardProject }) {
       )}
 
       {!editing && project.notes && <p className="tile-notes">{project.notes}</p>}
+      {project.stages.length > 0 && <StageProgress stages={project.stages} />}
 
       <ul className="stages">
         {openStages.map((stage) => (
@@ -165,6 +181,26 @@ export function ProjectTile({ project }: { project: DashboardProject }) {
 
       {error && <p className="error">{error.message}</p>}
     </article>
+  )
+}
+
+/** One segment per stage, coloured by status: how far along the build is at a glance */
+function StageProgress({ stages }: { stages: DashboardProject['stages'] }) {
+  const done = stages.filter((s) => s.status === 'done').length
+  const order: Record<string, number> = { done: 0, in_progress: 1, blocked: 2, not_started: 3 }
+  const sorted = [...stages].sort((a, b) => order[a.status] - order[b.status])
+  const label = `${done} of ${stages.length} stages done`
+  return (
+    <div className="progress" role="img" aria-label={label} title={label}>
+      <div className="progress-track">
+        {sorted.map((s) => (
+          <span key={s.id} className={`progress-seg seg-${s.status}`} />
+        ))}
+      </div>
+      <span className="progress-text">
+        {done}/{stages.length}
+      </span>
+    </div>
   )
 }
 

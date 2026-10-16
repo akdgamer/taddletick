@@ -4,6 +4,7 @@ import { useAddPayment, useDeletePayment, useUpdatePayment } from '../api/hooks'
 import type { DashboardPayment, PaymentFields } from '../api/types'
 import { formatDate, formatMoney, todayIso } from '../format'
 import { CheckIcon, EditIcon, IconButton, TrashIcon } from './Icons'
+import { afterSave, useToast } from './useToast'
 
 const EMPTY: PaymentFields = {
   label: '',
@@ -63,6 +64,7 @@ export function PaymentsSection({
 function PaymentRow({ payment, canEdit, canDelete }: { payment: DashboardPayment } & Rights) {
   const updatePayment = useUpdatePayment()
   const deletePayment = useDeletePayment()
+  const toast = useToast()
   const [editing, setEditing] = useState(false)
 
   if (editing) {
@@ -92,15 +94,20 @@ function PaymentRow({ payment, canEdit, canDelete }: { payment: DashboardPayment
             label="Mark received"
             tone="ok"
             icon={<CheckIcon />}
-            onClick={() =>
-              updatePayment.mutate({
-                id: payment.id,
-                body: {
-                  received_amount: payment.expected_amount,
-                  received_date: todayIso(),
-                },
-              })
-            }
+            onClick={() => {
+              const before = { received_amount: payment.received_amount, received_date: payment.received_date }
+              afterSave(
+                updatePayment.mutateAsync({
+                  id: payment.id,
+                  body: { received_amount: payment.expected_amount, received_date: todayIso() },
+                }),
+                () =>
+                  toast({
+                    message: `${payment.label}: ${formatMoney(payment.expected_amount)} received`,
+                    action: { label: 'Undo', run: () => updatePayment.mutate({ id: payment.id, body: before }) },
+                  }),
+              )
+            }}
           />
         )}
         {canEdit && (
