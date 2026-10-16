@@ -141,6 +141,10 @@ class ClientRead(ClientBase, ORMModel):
 
 # Stage types (catalog)
 
+class StageOrder(BaseModel):
+    stage_ids: list[int]
+
+
 class StageTypeCreate(BaseModel):
     name: str = Field(min_length=1, max_length=100)
 

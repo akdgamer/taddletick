@@ -2,6 +2,7 @@ import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tansta
 
 import { api } from './client'
 import type {
+  DashboardProject,
   Permission,
   RoleFields,
   UserCreate,
@@ -137,6 +138,29 @@ export const useUpdateProject = () =>
   useProjectMutation(({ id, body }: { id: number; body: ProjectUpdate }) => api.updateProject(id, body))
 
 export const useDeleteProject = () => useProjectMutation((id: number) => api.deleteProject(id))
+
+/** Shows the new order at once; puts the old one back if saving fails */
+export function useReorderStages() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ projectId, stageIds }: { projectId: number; stageIds: number[] }) =>
+      api.reorderStages(projectId, stageIds),
+    onMutate: async ({ projectId, stageIds }) => {
+      await queryClient.cancelQueries({ queryKey: keys.dashboard })
+      const previous = queryClient.getQueryData<DashboardProject[]>(keys.dashboard)
+      const rank = (id: number) => stageIds.indexOf(id)
+      queryClient.setQueryData<DashboardProject[]>(keys.dashboard, (projects) =>
+        projects?.map((p) =>
+          p.id === projectId ? { ...p, stages: [...p.stages].sort((a, b) => rank(a.id) - rank(b.id)) } : p,
+        ),
+      )
+      return { previous }
+    },
+    onError: (_error, _vars, context) => context?.previous && queryClient.setQueryData(keys.dashboard, context.previous),
+    onSettled: () =>
+      Promise.all([keys.dashboard, keys.activity].map((queryKey) => queryClient.invalidateQueries({ queryKey }))),
+  })
+}
 
 export const useAddStage = () =>
   useProjectMutation(({ projectId, body }: { projectId: number; body: ProjectStageCreate }) =>

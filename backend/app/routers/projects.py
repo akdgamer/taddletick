@@ -8,6 +8,7 @@ from app.db import get_session
 from app.models import Client, Project, ProjectLabel, ProjectStage, Role, StageType, User
 from app.routers.clients import check_client_exists
 from app.schemas import (
+    StageOrder,
     PaymentRead,
     ProjectCreate,
     ProjectFields,
@@ -167,6 +168,25 @@ def delete_project(project_id: int, session: Session = Depends(get_session), use
     session.delete(project)
     session.commit()
     delete_project_files(project_id)
+
+
+@router.put("/{project_id}/stage-order", status_code=204)
+def reorder_stages(
+    project_id: int, body: StageOrder, session: Session = Depends(get_session), user: User = Depends(current_user)
+):
+    """Set the order of the project's stages: every stage id, in the new order."""
+    project = get_visible_project(session, project_id, user)
+    auth.check(auth.can_edit(user, project))
+    by_id = {s.id: s for s in project.stages}
+    if sorted(body.stage_ids) != sorted(by_id):
+        raise HTTPException(422, "Send every stage of this project exactly once")
+    before = [s.id for s in sorted(project.stages, key=lambda s: s.position)]
+    if body.stage_ids == before:
+        return
+    for position, stage_id in enumerate(body.stage_ids):
+        by_id[stage_id].position = position
+    activity.record(session, user, project, "reordered the stages", kind="stage")
+    session.commit()
 
 
 @router.post("/{project_id}/stages", response_model=ProjectStageRead, status_code=201)

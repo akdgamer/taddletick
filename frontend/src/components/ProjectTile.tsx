@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-import { useAddStage, useDeleteProject, useUpdateProject } from '../api/hooks'
+import { useAddStage, useDeleteProject, useReorderStages, useUpdateProject } from '../api/hooks'
 import type { DashboardProject } from '../api/types'
 import { plural, relativeDays, shortDate } from '../format'
 import { EditProjectForm } from './EditProjectForm'
@@ -9,6 +9,7 @@ import { HistorySection } from './HistorySection'
 import { ChevronIcon, Menu } from './Menu'
 import { NotesSection } from './NotesSection'
 import { PaymentsSection } from './PaymentsSection'
+import { SortableStages } from './SortableStages'
 import { StageRow } from './StageRow'
 import { StageSearch } from './StageSearch'
 import { afterSave, useToast } from './useToast'
@@ -17,6 +18,7 @@ export function ProjectTile({ project }: { project: DashboardProject }) {
   const updateProject = useUpdateProject()
   const deleteProject = useDeleteProject()
   const addStage = useAddStage()
+  const reorder = useReorderStages()
   const toast = useToast()
   const [confirmingDelete, setConfirmingDelete] = useState(false)
   const [editing, setEditing] = useState(false)
@@ -26,7 +28,7 @@ export function ProjectTile({ project }: { project: DashboardProject }) {
   // The API puts finished stages last; they fold away under one line
   const openStages = project.stages.filter((s) => s.status !== 'done')
   const doneStages = project.stages.filter((s) => s.status === 'done')
-  const error = updateProject.error ?? deleteProject.error ?? addStage.error
+  const error = updateProject.error ?? deleteProject.error ?? addStage.error ?? reorder.error
   const meta = [project.client?.name, project.po_number && `PO ${project.po_number}`].filter(Boolean).join(' · ')
   const stageProps = { canEdit: access.can_edit, canDelete: access.can_delete }
 
@@ -131,9 +133,14 @@ export function ProjectTile({ project }: { project: DashboardProject }) {
       {project.stages.length > 0 && <StageProgress stages={project.stages} />}
 
       <ul className="stages">
-        {openStages.map((stage) => (
-          <StageRow key={stage.id} stage={stage} {...stageProps} />
-        ))}
+        <SortableStages
+          stages={openStages}
+          {...stageProps}
+          // Finished stages keep their places after the open ones
+          onReorder={(ids) =>
+            reorder.mutate({ projectId: project.id, stageIds: [...ids, ...doneStages.map((s) => s.id)] })
+          }
+        />
         {showDone && doneStages.map((stage) => <StageRow key={stage.id} stage={stage} {...stageProps} />)}
       </ul>
       {project.stages.length === 0 && <p className="muted empty">No stages yet.</p>}

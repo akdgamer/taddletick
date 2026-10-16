@@ -129,3 +129,22 @@ def test_stage_type_names_ignore_case_spacing_and_punctuation(client):
     assert client.post("/stage-types", json={"name": "  Wiring   check "}).json()["name"] == "Wiring check"
     r = client.post("/stage-types", json={"name": "testing qa"})
     assert r.status_code == 409 and r.json()["detail"] == "'Testing & QA' already exists"
+
+
+def test_reorder_stages(client):
+    p = client.post("/projects", json={"name": "Press", "stage_type_ids": [1, 2, 4]}).json()
+    ids = [s["id"] for s in p["stages"]]
+    assert client.put(f"/projects/{p['id']}/stage-order", json={"stage_ids": [ids[2], ids[0], ids[1]]}).status_code == 204
+    dash = next(x for x in client.get("/dashboard").json() if x["id"] == p["id"])
+    assert [s["name"] for s in dash["stages"]] == ["Design", "PO received", "Ordering parts"]
+    # Every stage, once
+    assert client.put(f"/projects/{p['id']}/stage-order", json={"stage_ids": ids[:2]}).status_code == 422
+    assert client.put(f"/projects/{p['id']}/stage-order", json={"stage_ids": [ids[0]] * 3}).status_code == 422
+    assert client.get("/activity", params={"project_id": p["id"]}).json()["items"][0]["summary"] == "reordered the stages"
+
+
+def test_reorder_needs_editing_rights(client, login_as):
+    p = client.post("/projects", json={"name": "Press", "stage_type_ids": [1, 2]}).json()
+    ids = [s["id"] for s in p["stages"]]
+    viewer = login_as("Viewer")
+    assert viewer.put(f"/projects/{p['id']}/stage-order", json={"stage_ids": ids[::-1]}).status_code == 403

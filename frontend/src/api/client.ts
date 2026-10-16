@@ -100,6 +100,8 @@ export const api = {
   updateProject: (id: number, body: ProjectUpdate) => request<Project>('PATCH', `/projects/${id}`, body),
   deleteProject: (id: number) => request<void>('DELETE', `/projects/${id}`),
 
+  reorderStages: (projectId: number, stageIds: number[]) =>
+    request<void>('PUT', `/projects/${projectId}/stage-order`, { stage_ids: stageIds }),
   addStage: (projectId: number, body: ProjectStageCreate) =>
     request<ProjectStage>('POST', `/projects/${projectId}/stages`, body),
   updateStage: (id: number, body: ProjectStageUpdate) => request<ProjectStage>('PATCH', `/stages/${id}`, body),

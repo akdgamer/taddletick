@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type CSSProperties, type ReactNode, type Ref } from 'react'
 
 import { useDeleteStage, useUpdateStage } from '../api/hooks'
 import type { DashboardStage, StageStatus } from '../api/types'
@@ -11,13 +11,15 @@ interface Props {
   stage: DashboardStage
   canEdit: boolean
   canDelete: boolean
+  /** Set when the row can be dragged into a new order (see SortableStages) */
+  sortable?: { ref: Ref<HTMLLIElement>; style: CSSProperties; handle: ReactNode; dragging: boolean }
 }
 
 /**
  * One stage: a compact line (status, name, due) that opens into the details
  * (date, notes, people). Status changes right from the line, being the most common edit.
  */
-export function StageRow({ stage, canEdit, canDelete }: Props) {
+export function StageRow({ stage, canEdit, canDelete, sortable }: Props) {
   const updateStage = useUpdateStage()
   const deleteStage = useDeleteStage()
   const [open, setOpen] = useState(false)
@@ -29,7 +31,12 @@ export function StageRow({ stage, canEdit, canDelete }: Props) {
   const error = updateStage.error ?? deleteStage.error
 
   return (
-    <li className={`stage flag-${stage.flag} status-${stage.status}${open ? ' open' : ''}`}>
+    <li
+      ref={sortable?.ref}
+      style={sortable?.style}
+      className={`stage flag-${stage.flag} status-${stage.status}${open ? ' open' : ''}${sortable?.dragging ? ' dragging' : ''}`}
+    >
+      {sortable?.handle}
       <div className="stage-line">
         <StatusSelect
           label={`${stage.name} status`}
