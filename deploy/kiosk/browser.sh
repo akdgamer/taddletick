@@ -25,4 +25,5 @@ exec chromium \
   --disable-session-crashed-bubble --disable-features=Translate,TouchpadOverscrollHistoryNavigation \
   --overscroll-history-navigation=0 --disable-pinch \
   --check-for-update-interval=31536000 \
-  --disable-gpu --force-device-scale-factor=1
+  --disable-gpu \
+  --force-device-scale-factor=0.9  # Chromium won't make a window under ~500px; 480px / 0.9 = 533 fits
