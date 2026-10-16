@@ -68,17 +68,18 @@ describe('ProjectTile', () => {
   })
 
   it('only offers stages not already on the project', async () => {
+    const user = userEvent.setup()
     renderWithQuery(<ProjectTile project={project} />)
-    const addStage = await screen.findByRole('combobox', { name: 'Add stage' })
-    const options = within(addStage).getAllByRole('option').map((o) => o.textContent)
-    expect(options).toEqual(['+ Add stage', 'Electrical design'])
+    await user.click(screen.getByRole('button', { name: '+ Add stage' }))
+    const options = within(await screen.findByRole('listbox')).getAllByRole('option').map((o) => o.textContent)
+    expect(options).toEqual(['Electrical design'])
   })
 
   it('hides changes the role may not make', () => {
     const readOnly = { can_edit: false, can_delete: false, can_view_payments: false, can_edit_payments: false }
     renderWithQuery(<ProjectTile project={{ ...project, access: readOnly }} />)
     expect(screen.queryByRole('button', { name: 'Actions for Welding fixture' })).not.toBeInTheDocument()
-    expect(screen.queryByRole('combobox', { name: 'Add stage' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: '+ Add stage' })).not.toBeInTheDocument()
     expect(screen.queryByText('Payments')).not.toBeInTheDocument()
     expect(screen.getByRole('combobox', { name: 'Ordering parts status' })).toBeDisabled()
   })

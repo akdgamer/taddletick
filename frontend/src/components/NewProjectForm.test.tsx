@@ -14,9 +14,12 @@ describe('NewProjectForm', () => {
 
     await user.type(screen.getByLabelText('Name'), 'Press line')
     await user.type(screen.getByLabelText('PO number'), ' PO-9 ')
-    // Tick out of order: Electrical design first, then PO received
-    await user.click(await screen.findByLabelText('Electrical design'))
-    await user.click(screen.getByLabelText('PO received'))
+    // Pick out of order: Electrical design first (by searching), then PO received
+    await user.click(screen.getByRole('button', { name: '+ Add stages' }))
+    await user.type(screen.getByRole('combobox', { name: 'Search stages' }), 'elec{Enter}')
+    await user.click(screen.getByRole('button', { name: '+ Add another stage' }))
+    await user.click(await screen.findByRole('option', { name: 'PO received' }))
+    expect(screen.getByRole('button', { name: 'Remove Electrical design' })).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'Create project' }))
 
     const [url, init] = fetchMock.mock.calls.find(([, i]) => i?.method === 'POST')!
@@ -33,5 +36,31 @@ describe('NewProjectForm', () => {
       allowed_role_ids: [],
     })
     await vi.waitFor(() => expect(onDone).toHaveBeenCalled())
+  })
+
+  it('warns about similar stages before creating a new one', async () => {
+    const fetchMock = mockFetch()
+    const user = userEvent.setup()
+    renderWithQuery(<NewProjectForm onDone={vi.fn()} />)
+
+    await user.click(screen.getByRole('button', { name: '+ Add stages' }))
+    const search = screen.getByRole('combobox', { name: 'Search stages' })
+    await user.type(search, 'electric design')
+    expect(await screen.findByText(/Similar stages already exist: Electrical design/)).toBeInTheDocument()
+    expect(screen.getByRole('option', { name: '+ Create “electric design”' })).toBeInTheDocument()
+
+    // The same name in other capitals isn't offered as new
+    await user.clear(search)
+    await user.type(search, 'PO RECEIVED')
+    expect(screen.queryByRole('option', { name: /Create/ })).not.toBeInTheDocument()
+
+    await user.clear(search)
+    await user.type(search, 'Painting{Enter}')
+    const post = await vi.waitFor(() => {
+      const call = fetchMock.mock.calls.find(([url, i]) => String(url).endsWith('/stage-types') && i?.method === 'POST')
+      expect(call).toBeDefined()
+      return call!
+    })
+    expect(JSON.parse(String(post[1]!.body))).toEqual({ name: 'Painting' })
   })
 })

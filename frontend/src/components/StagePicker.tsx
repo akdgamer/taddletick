@@ -1,61 +1,40 @@
-import { useState } from 'react'
-
-import { useCreateStageType, useStageTypes } from '../api/hooks'
+import { useStageTypes } from '../api/hooks'
+import { IconButton, XIcon } from './Icons'
+import { StageSearch } from './StageSearch'
 
 interface Props {
   selected: number[]
   onChange: (ids: number[]) => void
 }
 
-/** Pick stages from the catalog, or add a new stage type to it. */
+/** The new project's stages: chosen ones as chips, plus a search to add more (or create one). */
 export function StagePicker({ selected, onChange }: Props) {
   const { data: stageTypes = [] } = useStageTypes()
-  const createStageType = useCreateStageType()
-  const [newName, setNewName] = useState('')
-
-  const toggle = (id: number) =>
-    onChange(selected.includes(id) ? selected.filter((s) => s !== id) : [...selected, id])
-
-  const addType = () => {
-    const name = newName.trim()
-    if (!name) return
-    createStageType.mutate(name, {
-      onSuccess: (created) => {
-        onChange([...selected, created.id])
-        setNewName('')
-      },
-    })
-  }
+  // Show them in catalog order, the order they'll have on the project
+  const chosen = stageTypes.filter((t) => selected.includes(t.id))
 
   return (
     <fieldset className="stage-picker">
       <legend>Stages</legend>
-      <div className="stage-options">
-        {stageTypes.map((t) => (
-          <label key={t.id} className="checkbox">
-            <input type="checkbox" checked={selected.includes(t.id)} onChange={() => toggle(t.id)} />
-            {t.name}
-          </label>
-        ))}
-      </div>
-      <div className="inline-add">
-        <input
-          aria-label="New stage type"
-          placeholder="New stage type"
-          value={newName}
-          onChange={(e) => setNewName(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') {
-              e.preventDefault() // don't submit the project form
-              addType()
-            }
-          }}
-        />
-        <button type="button" onClick={addType} disabled={!newName.trim()}>
-          Add
-        </button>
-      </div>
-      {createStageType.error && <p className="error">{createStageType.error.message}</p>}
+      {chosen.length > 0 && (
+        <ul className="stage-chips">
+          {chosen.map((t) => (
+            <li key={t.id} className="stage-chip">
+              {t.name}
+              <IconButton
+                label={`Remove ${t.name}`}
+                icon={<XIcon />}
+                onClick={() => onChange(selected.filter((id) => id !== t.id))}
+              />
+            </li>
+          ))}
+        </ul>
+      )}
+      <StageSearch
+        exclude={selected}
+        label={chosen.length ? '+ Add another stage' : '+ Add stages'}
+        onPick={(t) => onChange([...selected, t.id])}
+      />
     </fieldset>
   )
 }

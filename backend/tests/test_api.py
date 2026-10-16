@@ -123,3 +123,9 @@ def test_dashboard_orders_flags_and_hides_completed(client):
 
     assert dashboard[1]["id"] == calm["id"]
     assert dashboard[1]["flag"] == "none"
+
+
+def test_stage_type_names_ignore_case_spacing_and_punctuation(client):
+    assert client.post("/stage-types", json={"name": "  Wiring   check "}).json()["name"] == "Wiring check"
+    r = client.post("/stage-types", json={"name": "testing qa"})
+    assert r.status_code == 409 and r.json()["detail"] == "'Testing & QA' already exists"

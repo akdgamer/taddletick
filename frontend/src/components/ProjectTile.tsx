@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-import { useAddStage, useDeleteProject, useStageTypes, useUpdateProject } from '../api/hooks'
+import { useAddStage, useDeleteProject, useUpdateProject } from '../api/hooks'
 import type { DashboardProject } from '../api/types'
 import { plural, relativeDays, shortDate } from '../format'
 import { EditProjectForm } from './EditProjectForm'
@@ -10,10 +10,10 @@ import { ChevronIcon, Menu } from './Menu'
 import { NotesSection } from './NotesSection'
 import { PaymentsSection } from './PaymentsSection'
 import { StageRow } from './StageRow'
+import { StageSearch } from './StageSearch'
 import { afterSave, useToast } from './useToast'
 
 export function ProjectTile({ project }: { project: DashboardProject }) {
-  const { data: stageTypes = [] } = useStageTypes()
   const updateProject = useUpdateProject()
   const deleteProject = useDeleteProject()
   const addStage = useAddStage()
@@ -23,8 +23,6 @@ export function ProjectTile({ project }: { project: DashboardProject }) {
   const [showDone, setShowDone] = useState(false)
 
   const { access } = project
-  const usedTypeIds = new Set(project.stages.map((s) => s.stage_type_id))
-  const availableTypes = stageTypes.filter((t) => !usedTypeIds.has(t.id))
   // The API puts finished stages last; they fold away under one line
   const openStages = project.stages.filter((s) => s.status !== 'done')
   const doneStages = project.stages.filter((s) => s.status === 'done')
@@ -147,22 +145,13 @@ export function ProjectTile({ project }: { project: DashboardProject }) {
             {plural(doneStages.length, 'completed stage')}
           </button>
         )}
-        {access.can_edit && availableTypes.length > 0 && (
-          <select
-            className="ghost-select"
-            aria-label="Add stage"
-            value=""
-            onChange={(e) =>
-              addStage.mutate({ projectId: project.id, body: { stage_type_id: Number(e.target.value) } })
-            }
-          >
-            <option value="">+ Add stage</option>
-            {availableTypes.map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.name}
-              </option>
-            ))}
-          </select>
+        {access.can_edit && (
+          <StageSearch
+            exclude={project.stages.map((s) => s.stage_type_id)}
+            label="+ Add stage"
+            busy={addStage.isPending}
+            onPick={(t) => addStage.mutate({ projectId: project.id, body: { stage_type_id: t.id } })}
+          />
         )}
       </div>
 
