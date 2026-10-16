@@ -178,7 +178,7 @@ sh deploy/kiosk/install.sh YOUR_USERNAME
 
 It starts at boot and shows the clock, today's tasks, projects that need attention, the
 next dispatch, and backup / Google sync / temperature dots. Upside down? Set
-`ROTATE=270` in `deploy/kiosk/browser.sh` and `sudo systemctl restart taddletick-display`.
+`ROTATE=180` in `deploy/kiosk/browser.sh` and `sudo systemctl restart taddletick-display`.
 Unpair it under **Settings → Desk display**; pair again with the install command.
 
 ## Everyday operations

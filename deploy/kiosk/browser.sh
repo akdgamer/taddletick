@@ -1,8 +1,9 @@
 #!/bin/sh
-# Runs inside cage: turn the panel to landscape, then open the display page full-screen.
-# ROTATE: 90 or 270 (landscape either way up), 0/180 for portrait. Touch follows the rotation.
-ROTATE="${ROTATE:-90}"
-wlr-randr --output SPI-1 --transform "$ROTATE" 2>/dev/null || true
+# Runs inside cage: rotate the panel if asked, then open the display page full-screen.
+# The panel is landscape (480x320) as it comes. ROTATE=180 turns it upside down; 90/270 portrait.
+# Touch follows the rotation.
+ROTATE="${ROTATE:-normal}"
+[ "$ROTATE" != normal ] && wlr-randr --output SPI-1 --transform "$ROTATE" 2>/dev/null
 
 # Wait until the app answers, so the screen doesn't open on an error page after a reboot
 until curl -sf http://localhost:8000/health >/dev/null; do sleep 2; done
