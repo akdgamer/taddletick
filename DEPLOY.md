@@ -186,7 +186,7 @@ Unpair it under **Settings → Desk display**; pair again with the install comma
 
 | Task | Command (in `~/taddletick` on the Pi) |
 |---|---|
-| Update to the latest code | `git pull && docker compose -f docker-compose.prod.yml up -d --build` |
+| Update to the latest code | `deploy/update.sh` (or from the Mac: `ssh -t zuneek@taddletick-pi taddletick/deploy/update.sh`). Backs up, pulls, rebuilds, health-checks, and rolls back by itself if the new version doesn't start |
 | See logs | `docker compose -f docker-compose.prod.yml logs -f app worker` |
 | Restart | `docker compose -f docker-compose.prod.yml restart` |
 | List backups | `ls /mnt/nas/taddletick/backups` |

@@ -7,6 +7,19 @@ import { shortDate } from '../format'
 import './display.css'
 
 const REFRESH_MS = 60_000
+const VERSION_CHECK_MS = 5 * 60_000
+
+// The built page loads one hashed bundle (assets/index-AbC123.js); a new deploy changes the name
+const bundleOf = (html: string) => html.match(/assets\/index-[\w-]+\.js/)?.[0] ?? null
+const runningBundle = bundleOf(document.documentElement.outerHTML)
+
+/** After an update on the Pi, the always-on screen reloads itself instead of running the old page forever */
+async function reloadIfUpdated(): Promise<boolean> {
+  if (!runningBundle) return false // dev server: no hashed bundle to compare
+  const latest = bundleOf(await (await fetch('/', { cache: 'no-store' })).text())
+  if (latest && latest !== runningBundle) window.location.reload()
+  return false
+}
 
 type Dot = 'ok' | 'warn' | 'bad' | 'off'
 
@@ -42,6 +55,8 @@ function Display() {
       client.setQueryData<DisplayData>(KEY, (d) => d && { ...d, tasks: d.tasks.map((t) => (t.id === id ? { ...t, done } : t)) }),
     onSettled: () => client.invalidateQueries({ queryKey: KEY }),
   })
+
+  useQuery({ queryKey: ['display-version'], queryFn: reloadIfUpdated, refetchInterval: VERSION_CHECK_MS })
 
   useEffect(() => {
     // The screen is always dark, whatever the main app's theme
