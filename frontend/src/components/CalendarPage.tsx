@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 
 import { useDashboard, useOutstandingPayments } from '../api/hooks'
 import type { Flag } from '../api/types'
@@ -23,7 +23,11 @@ interface CalEvent {
 
 const KIND_LABELS: Record<Kind, string> = { dispatch: 'Dispatch', stage: 'Stages', payment: 'Payments' }
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-const MAX_IN_CELL = 3
+// Heights used to work out what fits in a day cell (measured; must match index.css)
+const DATE_ROW = 39 // cell padding, the date number and the gap after it
+const CHIP = 42 // two-line entry incl. gap
+const CHIP_COMPACT = 19 // one-line entry incl. gap
+const MORE = 17 // "+N more"
 
 const iso = (d: Date) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
@@ -38,6 +42,9 @@ export function CalendarPage({ onOpenProject }: { onOpenProject: () => void }) {
   const [shown, setShown] = useState<Record<Kind, boolean>>({ dispatch: true, stage: true, payment: true })
   const [selected, setSelected] = useState<string | null>(null)
   const today = todayIso()
+  const days = monthGrid(month)
+  const weeks = days.length / 7
+  const [gridRef, space] = useCellSpace(weeks)
 
   const step = (by: number) => {
     setMonth((m) => new Date(m.getFullYear(), m.getMonth() + by, 1))
@@ -67,7 +74,6 @@ export function CalendarPage({ onOpenProject }: { onOpenProject: () => void }) {
     return map
   }, [events.data, shown])
 
-  const days = monthGrid(month)
   const inMonth = (d: Date) => d.getMonth() === month.getMonth()
   const monthEvents = days.filter(inMonth).flatMap((d) => (byDate.get(iso(d)) ?? []).map((e) => e))
   const counts = {
@@ -134,7 +140,13 @@ export function CalendarPage({ onOpenProject }: { onOpenProject: () => void }) {
       ) : (
         <>
           {/* Desktop: month grid */}
-          <div className="cal-grid" role="grid" aria-label="Month">
+          <div
+            ref={gridRef}
+            className="cal-grid"
+            role="grid"
+            aria-label="Month"
+            style={{ gridTemplateRows: `auto repeat(${weeks}, minmax(0, 1fr))` }}
+          >
             {WEEKDAYS.map((w) => (
               <div key={w} className="cal-weekday" role="columnheader">
                 {w}
@@ -143,7 +155,14 @@ export function CalendarPage({ onOpenProject }: { onOpenProject: () => void }) {
             {days.map((d) => {
               const key = iso(d)
               const list = byDate.get(key) ?? []
-              const extra = list.length - MAX_IN_CELL
+              // Full two-line entries if they all fit; a crowded day switches to one-line entries,
+              // keeping a line for "+N more" only when even those don't all fit
+              const compact = list.length * CHIP > space
+              const max =
+                !compact || list.length * CHIP_COMPACT <= space
+                  ? list.length
+                  : Math.max(1, Math.floor((space - MORE) / CHIP_COMPACT))
+              const extra = list.length - max
               return (
                 <div
                   key={key}
@@ -154,22 +173,23 @@ export function CalendarPage({ onOpenProject }: { onOpenProject: () => void }) {
                     key === today ? 'today' : '',
                     key === selected ? 'selected' : '',
                     d.getDay() === 0 || d.getDay() === 6 ? 'weekend' : '',
+                    compact ? 'compact' : '',
                   ].join(' ')}
                   onClick={() => setSelected(key === selected ? null : key)}
                 >
                   <span className="cal-date">{d.getDate()}</span>
-                  {list.slice(0, MAX_IN_CELL).map((e) => (
+                  {list.slice(0, max).map((e) => (
                     <EventChip key={e.key} event={e} onOpen={open} />
                   ))}
                   {extra > 0 && <span className="cal-more">+{extra} more</span>}
                 </div>
               )
             })}
+            {selected && (
+              <DayPanel date={selected} events={byDate.get(selected) ?? []} onOpen={open} onClose={() => setSelected(null)} />
+            )}
           </div>
 
-          {selected && (
-            <DayPanel date={selected} events={byDate.get(selected) ?? []} onOpen={open} onClose={() => setSelected(null)} />
-          )}
 
           {/* Phone: the month as a list */}
           <div className="cal-agenda">
@@ -247,6 +267,28 @@ function DayPanel({ date, events, onOpen, onClose }: {
       )}
     </section>
   )
+}
+
+/** Height available for entries in each day cell at the current window size (re-measured on resize). */
+function useCellSpace(weeks: number) {
+  const ref = useRef<HTMLDivElement>(null)
+  const [space, setSpace] = useState(130)
+
+  useLayoutEffect(() => {
+    const grid = ref.current
+    if (!grid) return
+    const measure = () => {
+      const header = grid.querySelector<HTMLElement>('.cal-weekday')?.offsetHeight ?? 30
+      const cell = (grid.clientHeight - header) / weeks - 1
+      setSpace(Math.max(0, Math.floor(cell - DATE_ROW)))
+    }
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(grid)
+    return () => observer.disconnect()
+  }, [weeks])
+
+  return [ref, space] as const
 }
 
 /** Monday-first weeks covering the whole month (5 or 6 rows) */

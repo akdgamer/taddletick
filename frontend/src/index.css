@@ -2689,6 +2689,7 @@ kbd {
 }
 
 .cal-grid {
+  position: relative;
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
   border: 1px solid var(--border);
@@ -2710,7 +2711,8 @@ kbd {
 }
 
 .cal-day {
-  min-height: 112px;
+  min-height: 0;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   gap: 3px;
@@ -2816,8 +2818,28 @@ kbd {
   font-weight: 500;
 }
 
+/* A day's full list slides in over the right of the grid, so opening it never adds scrolling */
 .cal-panel {
-  margin-top: 16px;
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 5;
+  width: min(340px, 90%);
+  margin: 0;
+  overflow-y: auto;
+  border-radius: 0;
+  border-width: 0 0 0 1px;
+  box-shadow: var(--shadow-pop);
+  cursor: default;
+  animation: slide-in 0.18s ease-out;
+}
+
+@keyframes slide-in {
+  from {
+    transform: translateX(16px);
+    opacity: 0;
+  }
 }
 
 .cal-panel header {
@@ -2901,3 +2923,49 @@ kbd {
     width: auto;
   }
 }
+
+/* Wider than a phone: the month fills the window exactly, no page scrolling */
+@media (min-width: 641px) {
+  .calendar-page {
+    height: calc(100dvh - 53px); /* everything below the app bar */
+    display: flex;
+    flex-direction: column;
+    padding-top: 18px;
+    padding-bottom: 16px;
+    animation: none;
+  }
+
+  .calendar-page .page-header {
+    flex-shrink: 0;
+    margin-bottom: 12px;
+  }
+
+  .calendar-page .cal-grid {
+    flex: 1;
+    min-height: 360px; /* very short windows scroll rather than squash */
+  }
+}
+
+/* A crowded day: one line per entry */
+.cal-day.compact .cal-event {
+  display: block;
+  padding: 1px 6px 1px 7px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.45;
+}
+
+.cal-day.compact .cal-event-project::after {
+  content: ' · ';
+  font-weight: 400;
+}
+
+.cal-day.compact .cal-event-project,
+.cal-day.compact .cal-event-title {
+  display: inline;
+}
+
+.cal-day.compact {
+  gap: 2px;
+}
+
