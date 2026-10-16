@@ -1,0 +1,32 @@
+# The desk display: Chromium full-screen on the Pi's 3.5" SPI touch screen, via the cage kiosk compositor.
+# Installed by deploy/kiosk/install.sh. Logs: journalctl -u taddletick-display
+[Unit]
+Description=Taddletick desk display (kiosk on the 3.5" touch screen)
+After=systemd-user-sessions.service docker.service network-online.target
+Wants=network-online.target
+# It takes over the console on the little screen
+Conflicts=getty@tty1.service
+
+[Service]
+User=zuneek
+PAMName=login
+TTYPath=/dev/tty1
+TTYReset=yes
+TTYVHangup=yes
+StandardInput=tty-fail
+StandardOutput=journal
+StandardError=journal
+UtmpIdentifier=tty1
+UtmpMode=user
+# Only the SPI panel (by its bus path, which doesn't change between boots), drawn in software
+Environment=WLR_DRM_DEVICES=/dev/dri/by-path/platform-fe204000.spi-cs-0-card
+Environment=WLR_RENDERER=pixman
+Environment=WLR_NO_HARDWARE_CURSORS=1
+# Wait until the app answers, so the screen doesn't open on an error page after a reboot
+ExecStartPre=/bin/sh -c 'until curl -sf http://localhost:8000/health >/dev/null; do sleep 2; done'
+ExecStart=/usr/bin/cage -d -- /home/zuneek/taddletick/deploy/kiosk/browser.sh
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

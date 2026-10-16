@@ -158,6 +158,29 @@ docker compose -f docker-compose.prod.yml exec -T db \
 docker compose -f docker-compose.prod.yml restart app worker
 ```
 
+## 9. Desk display (optional): a 3.5" touch screen on the GPIO pins
+
+For the common "3.5inch RPi Display" (480×320, ILI9486 + XPT2046 touch). Shut the Pi
+down before fitting it. Don't run the vendor's "LCD-show" scripts; the kernel already
+has a driver. Add to `/boot/firmware/config.txt` and reboot:
+
+```
+dtparam=spi=on
+dtoverlay=piscreen,drm,speed=16000000
+```
+
+The screen turns black with a text console. Then install the kiosk and pair it as your
+account's display (its login can only show the display page and tick tasks):
+
+```sh
+sh deploy/kiosk/install.sh YOUR_USERNAME
+```
+
+It starts at boot and shows the clock, today's tasks, projects that need attention, the
+next dispatch, and backup / Google sync / temperature dots. Upside down? Set
+`ROTATE=270` in `deploy/kiosk/browser.sh` and `sudo systemctl restart taddletick-display`.
+Unpair it under **Settings → Desk display**; pair again with the install command.
+
 ## Everyday operations
 
 | Task | Command (in `~/taddletick` on the Pi) |
