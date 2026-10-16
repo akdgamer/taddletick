@@ -4,6 +4,9 @@
 ROTATE="${ROTATE:-90}"
 wlr-randr --output SPI-1 --transform "$ROTATE" 2>/dev/null || true
 
+# Wait until the app answers, so the screen doesn't open on an error page after a reboot
+until curl -sf http://localhost:8000/health >/dev/null; do sleep 2; done
+
 URL="http://localhost:8000/?display"
 # First start after `install.sh --pair`: a one-time code waits in this file
 PAIR_FILE="$HOME/.taddletick-display-pair"

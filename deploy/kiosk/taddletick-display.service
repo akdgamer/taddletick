@@ -22,8 +22,6 @@ UtmpMode=user
 Environment=WLR_DRM_DEVICES=/dev/dri/by-path/platform-fe204000.spi-cs-0-card
 Environment=WLR_RENDERER=pixman
 Environment=WLR_NO_HARDWARE_CURSORS=1
-# Wait until the app answers, so the screen doesn't open on an error page after a reboot
-ExecStartPre=/bin/sh -c 'until curl -sf http://localhost:8000/health >/dev/null; do sleep 2; done'
 ExecStart=/usr/bin/cage -d -- /home/zuneek/taddletick/deploy/kiosk/browser.sh
 Restart=always
 RestartSec=5
