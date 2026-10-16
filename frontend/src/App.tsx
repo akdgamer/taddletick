@@ -6,6 +6,7 @@ import { useCan, useLogout, useMe, useSetupNeeded } from './api/hooks'
 import type { User } from './api/types'
 import { initials } from './format'
 import { ActivityPage } from './components/ActivityPage'
+import { CalendarPage } from './components/CalendarPage'
 import { CommandPalette, SearchIcon } from './components/CommandPalette'
 import { ContactsPage } from './components/ContactsPage'
 import { DashboardPage } from './components/DashboardPage'
@@ -34,6 +35,7 @@ const queryClient: QueryClient = new QueryClient({
 
 const PAGES = {
   projects: 'Projects',
+  calendar: 'Calendar',
   tasks: 'Tasks',
   contacts: 'Contacts',
   activity: 'Activity',
@@ -156,6 +158,7 @@ function Shell({ user }: { user: User }) {
         </nav>
       </header>
       {page === 'projects' && <DashboardPage />}
+      {page === 'calendar' && <CalendarPage onOpenProject={() => setPage('projects')} />}
       {page === 'tasks' && <TasksPage />}
       {page === 'contacts' && <ContactsPage />}
       {page === 'activity' && <ActivityPage />}
